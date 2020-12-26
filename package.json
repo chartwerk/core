@@ -14,7 +14,7 @@
     "url": "git+https://github.com/chartwerk/core.git"
   },
   "author": "CorpGlory",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@types/d3": "^5.7.2",
     "@types/lodash": "^4.14.149",
