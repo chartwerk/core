@@ -440,10 +440,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderGrid();
     this.isPanning = true;
     this.onMouseOut();
-    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningZoom !== undefined) {
-      this.options.eventsCallbacks.panningZoom([this.state.xValueRange, this.state.yValueRange]);
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
+      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
     } else {
-      console.log('on panning zoom, but there is no callback');
+      console.log('on panning, but there is no callback');
     }
   }
 

@@ -60,8 +60,8 @@ export default {
       if(has(this.$listeners, 'panningEnd')) {
         this.options.eventsCallbacks.panningEnd = this.panningEnd.bind(this);
       }
-      if(has(this.$listeners, 'panningZoom')) {
-        this.options.eventsCallbacks.panningZoom = this.panningZoom.bind(this);
+      if(has(this.$listeners, 'panning')) {
+        this.options.eventsCallbacks.panning = this.panning.bind(this);
       }
       if(has(this.$listeners, 'contextMenu')) {
         this.options.eventsCallbacks.contextMenu = this.contextMenu.bind(this);
@@ -85,8 +85,8 @@ export default {
     panningEnd(range) {
       this.$emit('panningEnd', range);
     },
-    panningZoom(range) {
-      this.$emit('panningZoom', range);
+    panning(range) {
+      this.$emit('panning', range);
     },
     contextMenu(evt) {
       this.$emit('contextMenu', evt);
