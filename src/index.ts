@@ -70,7 +70,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected brush?: d3.BrushBehavior<unknown>;
   protected zoom?: any;
-  protected svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
+  protected svg?: d3.Selection<SVGElement, unknown, null, undefined>;
   protected state?: PodState;
   protected clipPath?: any;
   protected isPanning = false;
