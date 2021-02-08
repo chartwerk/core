@@ -13,7 +13,8 @@ export type Options = {
   confidence?: number;
   eventsCallbacks?: {
     zoomIn: (range: [AxisRange, AxisRange]) => void,
-    panningEnd: ( range: [AxisRange, AxisRange]) => void,
+    panning: (range: [AxisRange, AxisRange]) => void,
+    panningEnd: (range: [AxisRange, AxisRange]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,

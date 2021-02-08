@@ -440,6 +440,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderGrid();
     this.isPanning = true;
     this.onMouseOut();
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
+      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
+    } else {
+      console.log('on panning, but there is no callback');
+    }
   }
 
   protected onPanningEnd(): void {
@@ -775,7 +780,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get isSeriesUnavailable(): boolean {
     // TODO: Use one && throw error
-    return this.series === undefined || this.series.length === 0 || this.series[0].datapoints.length === 0;
+    return this.series === undefined || this.series.length === 0 ||
+      max(this.series.map(serie => serie.datapoints.length)) === 0;
   }
 
   formatedBound(alias: string, target: string): string {
