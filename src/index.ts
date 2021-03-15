@@ -201,9 +201,19 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
-        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale)
+          .ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
+          .tickFormat(value => this.formatYAxisTicks(value))
       );
+  }
+
+  protected formatYAxisTicks(value: d3.NumberValue): string {
+    // TODO: use Axis Formats for y axis
+    if(this.options.axis.y === undefined || this.options.axis.y.valueFormatter === undefined) {
+      return String(value);
+    }
+    return this.options.axis.y.valueFormatter(value as number);
   }
 
   protected renderCrosshair(): void {
@@ -648,7 +658,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         // TODO: find a better way
         return this.options.timeInterval.count;
       case AxisFormat.STRING:
-      // TODO: add string/symbol format
+        // TODO: add string/symbol format
+      case AxisFormat.CUSTOM:
+        return this.options.timeInterval.count;
       default:
         throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
     }
@@ -696,6 +708,12 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         return (d) => d;
       case AxisFormat.STRING:
         // TODO: add string/symbol format
+      case AxisFormat.CUSTOM:
+        if(this.options.axis.x.valueFormatter === undefined) {
+          console.warn(`Value formatter for y axis is not defined. Path options.axis.x.valueFormatter`);
+          return (d) => d;
+        }
+        return this.options.axis.x.valueFormatter;
       default:
         throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
     }
