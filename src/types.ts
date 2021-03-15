@@ -27,11 +27,13 @@ export type Options = {
       format: AxisFormat;
       range?: [number, number];
       invert?: boolean;
+      valueFormatter?: (value) => string;
     },
     y?: {
       format: AxisFormat;
       range?: [number, number];
       invert?: boolean;
+      valueFormatter?: (value) => string;
     }
   };
   crosshair?: {
@@ -101,7 +103,8 @@ export enum ZoomType {
 export enum AxisFormat {
   TIME = 'time',
   NUMERIC = 'numeric',
-  STRING = 'string'
+  STRING = 'string',
+  CUSTOM = 'custom'
 }
 export enum CrosshairOrientation {
   VERTICAL = 'vertical',
