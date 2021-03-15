@@ -32,6 +32,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderGrid(): void;
     protected renderXAxis(): void;
     protected renderYAxis(): void;
+    protected formatYAxisTicks(value: d3.NumberValue): string;
     protected renderCrosshair(): void;
     protected useBrush(): void;
     protected useScrollZoom(): void;
