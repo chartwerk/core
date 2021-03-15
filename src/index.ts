@@ -213,7 +213,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.axis.y === undefined || this.options.axis.y.valueFormatter === undefined) {
       return String(value);
     }
-    return this.options.axis.y.valueFormatter(value);
+    return this.options.axis.y.valueFormatter(value as number);
   }
 
   protected renderCrosshair(): void {

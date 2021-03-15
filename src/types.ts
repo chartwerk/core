@@ -27,13 +27,13 @@ export type Options = {
       format: AxisFormat;
       range?: [number, number];
       invert?: boolean;
-      valueFormatter?: (value) => string;
+      valueFormatter?: (value: number) => string;
     },
     y?: {
       format: AxisFormat;
       range?: [number, number];
       invert?: boolean;
-      valueFormatter?: (value) => string;
+      valueFormatter?: (value: number) => string;
     }
   };
   crosshair?: {
