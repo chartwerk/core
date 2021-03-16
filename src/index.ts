@@ -3,7 +3,18 @@ import { PodState } from './state';
 
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, CrosshairOrientation } from './types';
+import {
+  Margin,
+  TimeSerie,
+  Options,
+  TickOrientation,
+  TimeFormat,
+  ZoomOrientation,
+  ZoomType,
+  AxisFormat,
+  CrosshairOrientation,
+  SvgElementAttributes
+} from './types';
 import { uid } from './utils';
 import { palette } from './colors';
 
@@ -75,6 +86,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected clipPath?: any;
   protected isPanning = false;
   protected isBrushing = false;
+  protected brushStartSelection: [number, number] | null = null;
   private _clipPathUID = '';
   protected readonly options: O;
   protected readonly d3: typeof d3;
@@ -265,7 +277,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       case ZoomOrientation.HORIZONTAL:
         this.brush = this.d3.brushX();
         break;
-      case ZoomOrientation.BOTH:
+      case ZoomOrientation.SQUARE:
+      case ZoomOrientation.RECTANGLE:
         this.brush = this.d3.brush();
         break;
       default:
@@ -278,6 +291,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .handleSize(20)
       .filter(() => !this.d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
+      .on('brush', this.onBrush.bind(this))
       .on('end', this.onBrushEnd.bind(this))
 
     const pan = this.d3.zoom()
@@ -436,7 +450,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
         translateY = event.transform.y;
         break;
-      case ZoomOrientation.BOTH:
+      case ZoomOrientation.SQUARE:
+      case ZoomOrientation.RECTANGLE:
         translateX = event.transform.x;
         translateY = event.transform.y;
         this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
@@ -467,9 +482,48 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
+  protected onBrush(): void {
+    const selection = this.d3.event.selection;
+    if(this.options.zoom.orientation !== ZoomOrientation.SQUARE || selection === null) {
+      return;
+    }
+    const selectionAtts = this.getSelectionAttrs(selection);
+    if(selectionAtts === undefined) {
+      return;
+    }
+    this.chartContainer.select('.selection')
+      .attr('x', selectionAtts.x)
+      .attr('y', selectionAtts.y)
+      .attr('width', selectionAtts.width)
+      .attr('height', selectionAtts.height);
+  }
+
+  protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined {
+    if(this.brushStartSelection === null || selection === undefined || selection === null) {
+      return undefined;
+    }
+    const startX = this.brushStartSelection[0];
+    const startY = this.brushStartSelection[1];
+    const x0 = selection[0][0];
+    const x1 = selection[1][0];
+    const y0 = selection[0][1];
+    const y1 = selection[1][1];
+    const xRange = x1 - x0;
+    const yRange = y1 - y0;
+    const minWH = Math.min(xRange, yRange);
+    const x = x0 === startX ? startX : startX - minWH;
+    const y = y0 === startY ? startY : startY - minWH;
+    return {
+      x, y, width: minWH, height: minWH
+    }
+  }
   protected onBrushStart(): void {
     // TODO: move to state
     this.isBrushing === true;
+    const selection = this.d3.event.selection;
+    if(selection !== null && selection.length > 0) {
+      this.brushStartSelection = this.d3.event.selection[0];
+    }
     this.onMouseOut();
   }
 
@@ -501,7 +555,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         yRange = [upperY, bottomY];
         this.state.yValueRange = yRange;
         break;
-      case ZoomOrientation.BOTH:
+      case ZoomOrientation.RECTANGLE:
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
         const bothEndTimestamp = this.xScale.invert(extent[1][0]);
         const bothUpperY = this.yScale.invert(extent[0][1]);
@@ -510,6 +564,21 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         yRange = [bothUpperY, bothBottomY];
         this.state.xValueRange = xRange;
         this.state.yValueRange = yRange;
+        break;
+      case ZoomOrientation.SQUARE:
+        const selectionAtts = this.getSelectionAttrs(extent);
+        if(selectionAtts === undefined) {
+          break;
+        }
+        const scaledX0 = this.xScale.invert(selectionAtts.x);
+        const scaledX1 = this.xScale.invert(selectionAtts.x + selectionAtts.width);
+        const scaledY0 = this.yScale.invert(selectionAtts.y);
+        const scaledY1 = this.yScale.invert(selectionAtts.y + selectionAtts.height);
+        xRange = [scaledX0, scaledX1];
+        yRange = [scaledY0, scaledY1];
+        this.state.xValueRange = xRange;
+        this.state.yValueRange = yRange;
+        this.brushStartSelection = null;
     }
 
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.zoomIn !== undefined) {
