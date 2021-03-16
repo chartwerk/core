@@ -1,6 +1,6 @@
 import VueChartwerkPodMixin from './VueChartwerkPodMixin';
 import { PodState } from './state';
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, SvgElementAttributes } from './types';
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -16,6 +16,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected clipPath?: any;
     protected isPanning: boolean;
     protected isBrushing: boolean;
+    protected brushStartSelection: [number, number] | null;
     private _clipPathUID;
     protected readonly options: O;
     protected readonly d3: typeof d3;
@@ -43,6 +44,8 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderNoDataPointsMessage(): void;
     protected onPanningZoom(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
+    protected onBrush(): void;
+    protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;
     protected onBrushStart(): void;
     protected onBrushEnd(): void;
     protected scrollZoomed(): void;

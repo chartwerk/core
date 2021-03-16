@@ -93,7 +93,8 @@ export enum TimeFormat {
 export enum ZoomOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
-  BOTH = 'both'
+  RECTANGLE = 'rectangle',
+  SQUARE = 'square'
 }
 export enum ZoomType {
   BRUSH = 'brush',
@@ -110,4 +111,10 @@ export enum CrosshairOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
   BOTH = 'both'
+}
+export type SvgElementAttributes = {
+  x: number,
+  y: number,
+  width: number,
+  height: number
 }
