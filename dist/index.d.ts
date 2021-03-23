@@ -1,6 +1,6 @@
 import VueChartwerkPodMixin from './VueChartwerkPodMixin';
 import { PodState } from './state';
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, SvgElementAttributes } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, AxisFormat, SvgElementAttributes, KeyEvent, PanOrientation } from './types';
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -35,8 +35,11 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderYAxis(): void;
     protected formatYAxisTicks(value: d3.NumberValue): string;
     protected renderCrosshair(): void;
-    protected useBrush(): void;
-    protected useScrollZoom(): void;
+    protected addEvents(): void;
+    protected initBrush(): void;
+    protected filterByKeyEvent(key: KeyEvent): () => boolean;
+    protected initPan(): void;
+    protected initScrollZoom(): void;
     protected renderClipPath(): void;
     protected renderLegend(): void;
     protected renderYLabel(): void;
@@ -80,4 +83,4 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, palette };
+export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat, palette };
