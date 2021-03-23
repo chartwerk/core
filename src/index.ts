@@ -9,11 +9,12 @@ import {
   Options,
   TickOrientation,
   TimeFormat,
-  ZoomOrientation,
-  ZoomType,
+  BrushOrientation,
   AxisFormat,
   CrosshairOrientation,
-  SvgElementAttributes
+  SvgElementAttributes,
+  KeyEvent,
+  PanOrientation
 } from './types';
 import { uid } from './utils';
 import { palette } from './colors';
@@ -21,7 +22,7 @@ import { palette } from './colors';
 // we import only d3 types here
 import * as d3 from 'd3';
 
-import defaults from 'lodash/defaults';
+import defaultsDeep from 'lodash/defaultsDeep';
 import includes from 'lodash/includes';
 import first from 'lodash/first';
 import last from 'lodash/last';
@@ -50,9 +51,21 @@ const DEFAULT_OPTIONS: Options = {
     xAxis: '%H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
   },
-  zoom: {
-    type: ZoomType.BRUSH,
-    orientation: ZoomOrientation.HORIZONTAL
+  zoomEvents: {
+    brush: {
+      isActive: true,
+      keyEvent: KeyEvent.MAIN,
+      orientation: BrushOrientation.HORIZONTAL
+    },
+    pan: {
+      isActive: true,
+      keyEvent: KeyEvent.SHIFT,
+      orientation: PanOrientation.HORIZONTAL
+    },
+    scroll: {
+      isActive: false,
+      keyEvent: KeyEvent.SHIFT,
+    },
   },
   axis: {
     x: {
@@ -102,8 +115,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     styles.use();
 
     let options = cloneDeep(_options);
-    // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
-    defaults(options, DEFAULT_OPTIONS);
+    defaultsDeep(options, DEFAULT_OPTIONS);
     this.options = options;
     this.d3 = _d3;
 
@@ -119,8 +131,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderGrid();
 
     this.renderClipPath();
-    this.useBrush();
-    this.useScrollZoom();
+    this.addEvents();
 
     this.renderCrosshair();
     this.renderMetrics();
@@ -266,36 +277,74 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  protected useBrush(): void {
-    if(this.options.zoom === undefined || this.options.zoom.type !== ZoomType.BRUSH) {
+  protected addEvents(): void {
+    this.initBrush();
+    this.initPan();
+    this.initScrollZoom();
+
+    this.chartContainer
+      .on('mouseover', this.onMouseOver.bind(this))
+      .on('mouseout', this.onMouseOut.bind(this))
+      .on('mousemove', this.onMouseMove.bind(this))
+      .on('dblclick', this.zoomOut.bind(this));
+  }
+
+  protected initBrush(): void {
+    if(this.options.zoomEvents.brush.isActive === false) {
       return;
     }
-    switch(this.options.zoom.orientation) {
-      case ZoomOrientation.VERTICAL:
+    switch(this.options.zoomEvents.brush.orientation) {
+      case BrushOrientation.VERTICAL:
         this.brush = this.d3.brushY();
         break;
-      case ZoomOrientation.HORIZONTAL:
+      case BrushOrientation.HORIZONTAL:
         this.brush = this.d3.brushX();
         break;
-      case ZoomOrientation.SQUARE:
-      case ZoomOrientation.RECTANGLE:
+      case BrushOrientation.SQUARE:
+      case BrushOrientation.RECTANGLE:
         this.brush = this.d3.brush();
         break;
       default:
         this.brush = this.d3.brushX();
     }
+    const keyEvent = this.options.zoomEvents.brush.keyEvent;
     this.brush.extent([
         [0, 0],
         [this.width, this.height]
       ])
       .handleSize(20)
-      .filter(() => !this.d3.event.shiftKey)
+      .filter(this.filterByKeyEvent(keyEvent))
       .on('start', this.onBrushStart.bind(this))
       .on('brush', this.onBrush.bind(this))
-      .on('end', this.onBrushEnd.bind(this))
+      .on('end', this.onBrushEnd.bind(this));
 
+    this.chartContainer.call(this.brush);
+  }
+
+  protected filterByKeyEvent(key: KeyEvent): () => boolean {
+    // TODO: refactor
+    switch(key) {
+      case KeyEvent.MAIN:
+        return () => !this.d3.event.shiftKey;
+      case KeyEvent.SHIFT:
+        return () => this.d3.event.shiftKey;
+      default:
+        throw new Error(`Unknown type of KeyEvent: ${key}`);
+    }
+  }
+
+  protected initPan(): void {
+    if(this.options.zoomEvents.pan.isActive === false) {
+      return;
+    }
+    const keyEvent = this.options.zoomEvents.pan.keyEvent;
+    const brushKeyEvent = this.options.zoomEvents.brush.keyEvent;
+    if(keyEvent === brushKeyEvent) {
+      console.warn('Chartwerk doesnt support sthe ame key events for brush and panning. Skip panning');
+      return;
+    }
     const pan = this.d3.zoom()
-      .filter(() => this.d3.event.shiftKey)
+      .filter(this.filterByKeyEvent(keyEvent))
       .on('zoom', () => {
         this.onPanningZoom(this.d3.event);
       })
@@ -303,20 +352,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.onPanningEnd();
       });
 
-    this.chartContainer
-      .call(this.brush)
-      .on('mouseover', this.onMouseOver.bind(this))
-      .on('mouseout', this.onMouseOut.bind(this))
-      .on('mousemove', this.onMouseMove.bind(this))
-      .on('dblclick', this.zoomOut.bind(this));
-
-    if(this.options.usePanning === true) {
-      this.chartContainer.call(pan);
-    }
+    this.chartContainer.call(pan);
   }
 
-  protected useScrollZoom(): void {
-    if(this.options.zoom.type !== ZoomType.SCROLL) {
+  protected initScrollZoom(): void {
+    if(this.options.zoomEvents.scroll.isActive === false) {
       return;
     }
     this.zoom = this.d3.zoom();
@@ -441,17 +481,16 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // Here we use Zoom option, to determine witch axis will be panned. Options should be refactored
     let translateX = 0;
     let translateY = 0;
-    switch (this.options.zoom.orientation) {
-      case ZoomOrientation.HORIZONTAL:
+    switch(this.options.zoomEvents.pan.orientation) {
+      case PanOrientation.HORIZONTAL:
         this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
         translateX = event.transform.x;
         break;
-      case ZoomOrientation.VERTICAL:
+      case PanOrientation.VERTICAL:
         this.state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
         translateY = event.transform.y;
         break;
-      case ZoomOrientation.SQUARE:
-      case ZoomOrientation.RECTANGLE:
+      case PanOrientation.BOTH:
         translateX = event.transform.x;
         translateY = event.transform.y;
         this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
@@ -484,7 +523,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onBrush(): void {
     const selection = this.d3.event.selection;
-    if(this.options.zoom.orientation !== ZoomOrientation.SQUARE || selection === null) {
+    if(this.options.zoomEvents.brush.orientation !== BrushOrientation.SQUARE || selection === null) {
       return;
     }
     const selectionAtts = this.getSelectionAttrs(selection);
@@ -538,8 +577,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     let xRange: [number, number];
     let yRange: [number, number];
-    switch(this.options.zoom.orientation) {
-      case ZoomOrientation.HORIZONTAL:
+    switch(this.options.zoomEvents.brush.orientation) {
+      case BrushOrientation.HORIZONTAL:
         const startTimestamp = this.xScale.invert(extent[0]);
         const endTimestamp = this.xScale.invert(extent[1]);
         if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
@@ -548,14 +587,14 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         xRange = [startTimestamp, endTimestamp];
         this.state.xValueRange = xRange;
         break;
-      case ZoomOrientation.VERTICAL:
+      case BrushOrientation.VERTICAL:
         const upperY = this.yScale.invert(extent[0]);
         const bottomY = this.yScale.invert(extent[1]);
         // TODO: add min zoom y
         yRange = [upperY, bottomY];
         this.state.yValueRange = yRange;
         break;
-      case ZoomOrientation.RECTANGLE:
+      case BrushOrientation.RECTANGLE:
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
         const bothEndTimestamp = this.xScale.invert(extent[1][0]);
         const bothUpperY = this.yScale.invert(extent[0][1]);
@@ -565,7 +604,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.xValueRange = xRange;
         this.state.yValueRange = yRange;
         break;
-      case ZoomOrientation.SQUARE:
+      case BrushOrientation.SQUARE:
         const selectionAtts = this.getSelectionAttrs(extent);
         if(selectionAtts === undefined) {
           break;
@@ -932,6 +971,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
 export {
   ChartwerkPod, VueChartwerkPodMixin,
-  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat,
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat,
   palette
 };
