@@ -8,6 +8,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected readonly series: T[];
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected customOverlay?: d3.Selection<SVGRectElement, unknown, null, undefined>;
     protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected brush?: d3.BrushBehavior<unknown>;
     protected zoom?: any;

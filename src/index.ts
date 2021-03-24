@@ -91,6 +91,7 @@ const DEFAULT_OPTIONS: Options = {
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected customOverlay?: d3.Selection<SVGRectElement, unknown, null, undefined>;
   protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected brush?: d3.BrushBehavior<unknown>;
   protected zoom?: any;
@@ -291,6 +292,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected initBrush(): void {
     if(this.options.zoomEvents.brush.isActive === false) {
+      this.customOverlay = this.chartContainer.append('rect')
+        .attr('class', 'custom-overlay')
+        .attr('width', this.width)
+        .attr('height', this.height)
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('pointer-events', 'all')
+        .attr('cursor', 'crosshair')
+        .attr('fill', 'none');
       return;
     }
     switch(this.options.zoomEvents.brush.orientation) {
@@ -313,6 +323,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         [this.width, this.height]
       ])
       .handleSize(20)
+      // TODO: brush selection is hidden if keyEvent is shift
       .filter(this.filterByKeyEvent(keyEvent))
       .on('start', this.onBrushStart.bind(this))
       .on('brush', this.onBrush.bind(this))
@@ -339,10 +350,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
     const keyEvent = this.options.zoomEvents.pan.keyEvent;
     const brushKeyEvent = this.options.zoomEvents.brush.keyEvent;
-    if(keyEvent === brushKeyEvent) {
-      console.warn('Chartwerk doesnt support sthe ame key events for brush and panning. Skip panning');
+    if(this.options.zoomEvents.brush.isActive === true && keyEvent === brushKeyEvent) {
+      console.warn('Chartwerk doesn`t support the same key events for brush and panning. Skip panning');
       return;
     }
+
     const pan = this.d3.zoom()
       .filter(this.filterByKeyEvent(keyEvent))
       .on('zoom', () => {
@@ -512,6 +524,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected onPanningEnd(): void {
+    console.log('onPanningEnd');
     this.isPanning = false;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
@@ -523,6 +536,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onBrush(): void {
     const selection = this.d3.event.selection;
+    console.log('onBrush', selection);
     if(this.options.zoomEvents.brush.orientation !== BrushOrientation.SQUARE || selection === null) {
       return;
     }
@@ -557,6 +571,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
   protected onBrushStart(): void {
+    console.log('onBrushStart')
     // TODO: move to state
     this.isBrushing === true;
     const selection = this.d3.event.selection;
@@ -567,6 +582,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected onBrushEnd(): void {
+    console.log('onBrushEnd', this.d3.event);
     const extent = this.d3.event.selection;
     this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
