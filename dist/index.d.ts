@@ -18,6 +18,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected isPanning: boolean;
     protected isBrushing: boolean;
     protected brushStartSelection: [number, number] | null;
+    protected initScaleX?: d3.ScaleLinear<any, any>;
+    protected initScaleY?: d3.ScaleLinear<any, any>;
+    protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     private _clipPathUID;
     protected readonly options: O;
     protected readonly d3: typeof d3;
@@ -46,7 +50,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderYLabel(): void;
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
-    protected onPanningZoom(event: d3.D3ZoomEvent<any, any>): void;
+    protected onPanningZoom(): void;
+    protected onMouseMovePanning(event: d3.D3ZoomEvent<any, any>): void;
+    protected onWheelPanning(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
     protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;

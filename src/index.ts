@@ -101,6 +101,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected isPanning = false;
   protected isBrushing = false;
   protected brushStartSelection: [number, number] | null = null;
+  protected initScaleX?: d3.ScaleLinear<any, any>;
+  protected initScaleY?: d3.ScaleLinear<any, any>;
+  protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _clipPathUID = '';
   protected readonly options: O;
   protected readonly d3: typeof d3;
@@ -122,6 +126,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     // TODO: mb move it to render();
     this.initPodState();
+
     this.d3Node = this.d3.select(this.el);
   }
 
@@ -202,7 +207,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return;
     }
     this.chartContainer.select('#x-axis-container').remove();
-    this.chartContainer
+    this.xAxisElement = this.chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
@@ -220,7 +225,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return;
     }
     this.chartContainer.select('#y-axis-container').remove();
-    this.chartContainer
+    this.yAxisElement = this.chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
@@ -355,11 +360,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return;
     }
 
+    this.initScaleX = this.xScale.copy();
+    this.initScaleY = this.yScale.copy();
     const pan = this.d3.zoom()
       .filter(this.filterByKeyEvent(keyEvent))
-      .on('zoom', () => {
-        this.onPanningZoom(this.d3.event);
-      })
+      .on('zoom', this.onPanningZoom.bind(this))
       .on('end', () => {
         this.onPanningEnd();
       });
@@ -477,7 +482,30 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  protected onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
+  protected onPanningZoom(): void {
+    const event = this.d3.event;
+    const panningType = event.sourceEvent.type;
+    switch(panningType) {
+      case 'mousemove':
+        this.onMouseMovePanning(event);
+        break;
+      case 'wheel':
+        this.onWheelPanning(event);
+        break;
+      default:
+        throw new Error(`Unknown source ecent type: ${panningType}`);
+    }
+
+    this.isPanning = true;
+    this.onMouseOut();
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
+      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
+    } else {
+      console.log('on panning, but there is no callback');
+    }
+  }
+
+  protected onMouseMovePanning(event: d3.D3ZoomEvent<any, any>): void {
     // @ts-ignore
     const signX = Math.sign(event.transform.x);
     // @ts-ignore
@@ -514,17 +542,27 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderXAxis();
     this.renderYAxis();
     this.renderGrid();
-    this.isPanning = true;
-    this.onMouseOut();
-    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
-    } else {
-      console.log('on panning, but there is no callback');
-    }
+  }
+
+  protected onWheelPanning(event: d3.D3ZoomEvent<any, any>): void {
+    // TODO: use the same in panning mouse
+    const scale = event.transform.k;
+    const translateX = event.transform.x;
+    const translateY = event.transform.y;
+
+    // TODO: use pan orientation
+    const rescaleX = this.d3.event.transform.rescaleX(this.initScaleX);
+    const rescaleY = this.d3.event.transform.rescaleY(this.initScaleY);
+    this.xAxisElement.call(this.d3.axisBottom(this.xScale).scale(rescaleX));
+    this.yAxisElement.call(this.d3.axisLeft(this.yScale).scale(rescaleY));
+
+    this.state.xValueRange = [rescaleX.invert(0), rescaleX.invert(this.width)];
+    this.state.yValueRange = [rescaleY.invert(0), rescaleY.invert(this.height)];
+    this.chartContainer.select('.metrics-rect')
+      .attr('transform', `translate(${translateX},${translateY}), scale(${scale})`);
   }
 
   protected onPanningEnd(): void {
-    console.log('onPanningEnd');
     this.isPanning = false;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
@@ -536,7 +574,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onBrush(): void {
     const selection = this.d3.event.selection;
-    console.log('onBrush', selection);
     if(this.options.zoomEvents.brush.orientation !== BrushOrientation.SQUARE || selection === null) {
       return;
     }
@@ -570,8 +607,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       x, y, width: minWH, height: minWH
     }
   }
+
   protected onBrushStart(): void {
-    console.log('onBrushStart')
     // TODO: move to state
     this.isBrushing === true;
     const selection = this.d3.event.selection;
@@ -582,7 +619,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected onBrushEnd(): void {
-    console.log('onBrushEnd', this.d3.event);
     const extent = this.d3.event.selection;
     this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
