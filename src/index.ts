@@ -373,6 +373,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected initScrollZoom(): void {
+    // TODO: Seems it is not used
     if(this.options.zoomEvents.scroll.isActive === false) {
       return;
     }
