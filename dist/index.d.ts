@@ -1,6 +1,6 @@
 import VueChartwerkPodMixin from './VueChartwerkPodMixin';
 import { PodState } from './state';
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, SvgElementAttributes } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, AxisFormat, SvgElementAttributes, KeyEvent, PanOrientation } from './types';
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -8,6 +8,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected readonly series: T[];
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected customOverlay?: d3.Selection<SVGRectElement, unknown, null, undefined>;
     protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected brush?: d3.BrushBehavior<unknown>;
     protected zoom?: any;
@@ -17,6 +18,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected isPanning: boolean;
     protected isBrushing: boolean;
     protected brushStartSelection: [number, number] | null;
+    protected initScaleX?: d3.ScaleLinear<any, any>;
+    protected initScaleY?: d3.ScaleLinear<any, any>;
+    protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     private _clipPathUID;
     protected readonly options: O;
     protected readonly d3: typeof d3;
@@ -35,14 +40,19 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderYAxis(): void;
     protected formatYAxisTicks(value: d3.NumberValue): string;
     protected renderCrosshair(): void;
-    protected useBrush(): void;
-    protected useScrollZoom(): void;
+    protected addEvents(): void;
+    protected initBrush(): void;
+    protected filterByKeyEvent(key: KeyEvent): () => boolean;
+    protected initPan(): void;
+    protected initScrollZoom(): void;
     protected renderClipPath(): void;
     protected renderLegend(): void;
     protected renderYLabel(): void;
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
-    protected onPanningZoom(event: d3.D3ZoomEvent<any, any>): void;
+    protected onPanningZoom(): void;
+    protected onMouseMovePanning(event: d3.D3ZoomEvent<any, any>): void;
+    protected onWheelPanning(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
     protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;
@@ -80,4 +90,4 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, palette };
+export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat, palette };

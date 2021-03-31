@@ -1,4 +1,4 @@
-import { Options, TimeFormat, TickOrientation, ZoomType, ZoomOrientation, AxisFormat } from './types';
+import { Options, TimeFormat, TickOrientation, AxisFormat } from './types';
 
 import lodashGet from 'lodash/get';
 
@@ -10,10 +10,6 @@ const DEFAULT_OPTIONS: Options = {
   tickFormat: {
     xAxis: '%H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
-  },
-  zoom: {
-    type: ZoomType.BRUSH,
-    orientation: ZoomOrientation.HORIZONTAL
   },
   axis: {
     x: {

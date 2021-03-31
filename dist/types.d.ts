@@ -63,12 +63,21 @@ export declare type Options = {
         from: number;
         to: number;
     };
-    zoom?: {
-        type?: ZoomType;
-        orientation?: ZoomOrientation;
-        transform?: boolean;
-        y?: [number, number];
-        x?: [number, number];
+    zoomEvents?: {
+        brush: {
+            isActive: boolean;
+            keyEvent: KeyEvent;
+            orientation?: BrushOrientation;
+        };
+        pan: {
+            isActive: boolean;
+            keyEvent: KeyEvent;
+            orientation?: PanOrientation;
+        };
+        scroll: {
+            isActive: boolean;
+            keyEvent: KeyEvent;
+        };
     };
     renderTicksfromTimestamps?: boolean;
     renderYaxis?: boolean;
@@ -93,16 +102,16 @@ export declare enum TimeFormat {
     MONTH = "month",
     YEAR = "year"
 }
-export declare enum ZoomOrientation {
+export declare enum BrushOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",
     RECTANGLE = "rectangle",
     SQUARE = "square"
 }
-export declare enum ZoomType {
-    BRUSH = "brush",
-    SCROLL = "scroll",
-    NONE = "none"
+export declare enum PanOrientation {
+    VERTICAL = "vertical",
+    HORIZONTAL = "horizontal",
+    BOTH = "both"
 }
 export declare enum AxisFormat {
     TIME = "time",
@@ -121,3 +130,7 @@ export declare type SvgElementAttributes = {
     width: number;
     height: number;
 };
+export declare enum KeyEvent {
+    MAIN = "main",
+    SHIFT = "shift"
+}

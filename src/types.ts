@@ -60,13 +60,22 @@ export type Options = {
     from: number,
     to: number
   };
-  zoom?: {
-    type?: ZoomType;
-    orientation?: ZoomOrientation;
-    transform?: boolean;
-    y?: [number, number],
-    x?: [number, number]
-  };
+  zoomEvents?: {
+    brush: {
+      isActive: boolean;
+      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+      orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
+    },
+    pan: {
+      isActive: boolean;
+      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+      orientation?: PanOrientation;
+    },
+    scroll: {
+      isActive: boolean;
+      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+    },
+  }
   renderTicksfromTimestamps?: boolean;
   renderYaxis?: boolean;
   renderXaxis?: boolean;
@@ -90,16 +99,16 @@ export enum TimeFormat {
   MONTH = 'month',
   YEAR = 'year'
 }
-export enum ZoomOrientation {
+export enum BrushOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
   RECTANGLE = 'rectangle',
   SQUARE = 'square'
 }
-export enum ZoomType {
-  BRUSH = 'brush',
-  SCROLL = 'scroll',
-  NONE = 'none'
+export enum PanOrientation {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal',
+  BOTH = 'both',
 }
 export enum AxisFormat {
   TIME = 'time',
@@ -117,4 +126,8 @@ export type SvgElementAttributes = {
   y: number,
   width: number,
   height: number
+}
+export enum KeyEvent {
+  MAIN = 'main',
+  SHIFT = 'shift'
 }
