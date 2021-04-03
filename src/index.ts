@@ -722,7 +722,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         .domain(domain)
         .range([0, this.width]);
     }
-    return this._xScale
+    return this._xScale;
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
