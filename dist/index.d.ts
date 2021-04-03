@@ -25,6 +25,8 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     private _clipPathUID;
     protected readonly options: O;
     protected readonly d3: typeof d3;
+    private _xScale;
+    private _yScale;
     constructor(_d3: typeof d3, el: HTMLElement, series: T[], _options: O);
     render(): void;
     protected abstract renderMetrics(): void;
@@ -84,6 +86,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     get margin(): Margin;
     get isSeriesUnavailable(): boolean;
     formatedBound(alias: string, target: string): string;
+    protected clearScaleCache(): void;
     protected getSerieColor(idx: number): string;
     protected get seriesTargetsWithBounds(): any[];
     protected get visibleSeries(): any[];
