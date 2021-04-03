@@ -86,7 +86,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     get margin(): Margin;
     get isSeriesUnavailable(): boolean;
     formatedBound(alias: string, target: string): string;
-    protected clearCache(): void;
+    protected clearScaleCache(): void;
     protected getSerieColor(idx: number): string;
     protected get seriesTargetsWithBounds(): any[];
     protected get visibleSeries(): any[];

@@ -134,7 +134,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   public render(): void {
-    this.clearCache();
+    this.clearScaleCache();
 
     this.renderSvg();
     this.renderXAxis();
@@ -980,7 +980,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return confidenceMetric;
   }
 
-  protected clearCache(): void {
+  protected clearScaleCache(): void {
     this._xScale = null;
     this._yScale = null;
   }
