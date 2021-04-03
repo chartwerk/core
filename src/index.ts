@@ -109,6 +109,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected readonly options: O;
   protected readonly d3: typeof d3;
 
+  private _xScale: d3.ScaleLinear<number, number> | null = null;
+  private _yScale: d3.ScaleLinear<number, number> | null = null;
+
   constructor(
     // maybe it's not the best idea
     _d3: typeof d3,
@@ -131,6 +134,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   public render(): void {
+    this.clearCache();
+
     this.renderSvg();
     this.renderXAxis();
     this.renderYAxis();
@@ -711,21 +716,27 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
-    const domain = this.state.xValueRange || [this.minValueX, this.maxValueX];
-    return this.d3.scaleLinear()
-      .domain(domain)
-      .range([0, this.width]);
+    if(this._xScale === null) {
+      const domain = this.state.xValueRange || [this.minValueX, this.maxValueX];
+      this._xScale = this.d3.scaleLinear()
+        .domain(domain)
+        .range([0, this.width]);
+    }
+    return this._xScale
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
-    let domain = this.state.yValueRange || [this.maxValue, this.minValue];
-    domain = sortBy(domain) as [number, number];
-    if(this.options.axis.y.invert === true) {
-      domain = reverse(domain);
+    if(this._yScale === null) {
+      let domain = this.state.yValueRange || [this.maxValue, this.minValue];
+      domain = sortBy(domain) as [number, number];
+      if(this.options.axis.y.invert === true) {
+        domain = reverse(domain);
+      }
+      this._yScale = this.d3.scaleLinear()
+        .domain(domain)
+        .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
     }
-    return this.d3.scaleLinear()
-      .domain(domain)
-      .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
+    return this._yScale;
   }
 
   get minValue(): number {
@@ -768,6 +779,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
+
     if(this.options.axis.x !== undefined && this.options.axis.x.range !== undefined) {
       return min(this.options.axis.x.range)
     }
@@ -966,6 +978,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   formatedBound(alias: string, target: string): string {
     const confidenceMetric = replace(alias, '$__metric_name', target);
     return confidenceMetric;
+  }
+
+  protected clearCache(): void {
+    this._xScale = null;
+    this._yScale = null;
   }
 
   protected getSerieColor(idx: number): string {
