@@ -693,7 +693,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected zoomOut(): void {
-    console.log('zoomout', this.isOutOfChart());
     if(this.isOutOfChart() === true) {
       return;
     }
