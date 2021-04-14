@@ -289,15 +289,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected addEvents(): void {
-    this.initBrush();
-    this.initPan();
-    this.initScrollZoom();
-
     this.chartContainer
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
+
+    this.initBrush();
+    this.initPan();
+    this.initScrollZoom();
   }
 
   protected initBrush(): void {
@@ -490,6 +490,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onPanningZoom(): void {
     const event = this.d3.event;
+    if(event.sourceEvent === null || event.sourceEvent === undefined) {
+      return;
+    }
     const panningType = event.sourceEvent.type;
     switch(panningType) {
       case 'mousemove':
@@ -690,6 +693,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected zoomOut(): void {
+    console.log('zoomout', this.isOutOfChart());
     if(this.isOutOfChart() === true) {
       return;
     }
