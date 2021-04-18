@@ -106,7 +106,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _clipPathUID = '';
-  protected readonly options: O;
+  protected options: O;
   protected readonly d3: typeof d3;
 
   private _xScale: d3.ScaleLinear<number, number> | null = null;
@@ -116,7 +116,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // maybe it's not the best idea
     _d3: typeof d3,
     protected readonly el: HTMLElement,
-    protected readonly series: T[] = [],
+    protected series: T[] = [],
     _options: O
   ) {
     // TODO: test if it's necessary
@@ -150,6 +150,32 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderLegend();
     this.renderYLabel();
     this.renderXLabel();
+  }
+
+  public updateData(series?: T[], options?: O, shouldRerender = true): void {
+    this.updateSeries(series);
+    this.updateOptions(options);
+    if(shouldRerender) {
+      this.render();
+    }
+  }
+
+  protected updateOptions(newOptions: O): void {
+    if(newOptions === undefined) {
+      return;
+    }
+    let options = cloneDeep(newOptions);
+    defaultsDeep(options, DEFAULT_OPTIONS);
+    this.options = options;
+    
+  }
+
+  protected updateSeries(newSeries: T[]): void {
+    if(newSeries === undefined) {
+      return;
+    }
+    let series = cloneDeep(newSeries);
+    this.series = series;
   }
 
   protected abstract renderMetrics(): void;
