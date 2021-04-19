@@ -237,7 +237,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.renderXaxis === false) {
       return;
     }
-    console.log('renderXAxis', this.options, this.xScale);
     this.chartContainer.select('#x-axis-container').remove();
     this.xAxisElement = this.chartContainer
       .append('g')
