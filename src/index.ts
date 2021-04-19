@@ -237,6 +237,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.renderXaxis === false) {
       return;
     }
+    console.log('renderXAxis', this.options, this.xScale);
     this.chartContainer.select('#x-axis-container').remove();
     this.xAxisElement = this.chartContainer
       .append('g')
@@ -1012,6 +1013,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected clearScaleCache(): void {
     this._xScale = null;
     this._yScale = null;
+    this.state.xValueRange = undefined;
+    this.state.yValueRange = undefined;
   }
 
   protected getSerieColor(idx: number): string {
