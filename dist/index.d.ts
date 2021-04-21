@@ -49,15 +49,13 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected initBrush(): void;
     protected filterByKeyEvent(key: KeyEvent): () => boolean;
     protected initPan(): void;
-    protected initScrollZoom(): void;
     protected renderClipPath(): void;
     protected renderLegend(): void;
     protected renderYLabel(): void;
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
     protected onPanningZoom(): void;
-    protected onMouseMovePanning(event: d3.D3ZoomEvent<any, any>): void;
-    protected onWheelPanning(event: d3.D3ZoomEvent<any, any>): void;
+    protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
     protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;
