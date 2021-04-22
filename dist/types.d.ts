@@ -16,9 +16,9 @@ export declare type Options = {
     margin?: Margin;
     confidence?: number;
     eventsCallbacks?: {
-        zoomIn: (range: [AxisRange, AxisRange]) => void;
-        panning: (range: [AxisRange, AxisRange]) => void;
-        panningEnd: (range: [AxisRange, AxisRange]) => void;
+        zoomIn: (range: AxisRange[]) => void;
+        panning: (range: AxisRange[]) => void;
+        panningEnd: (range: AxisRange[]) => void;
         zoomOut: (center: number) => void;
         mouseMove: (evt: any) => void;
         mouseOut: () => void;

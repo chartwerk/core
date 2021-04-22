@@ -424,7 +424,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     this.initScaleX = this.xScale.copy();
     this.initScaleY = this.yScale.copy();
-    this.initScaleY1 = this.y1Scale.copy();
+    if(this.options.axis.y1.isActive === true) {
+      this.initScaleY1 = this.y1Scale.copy();
+    }
     const panKeyEvent = this.options.zoomEvents.pan.keyEvent;
     const pan = this.d3.zoom()
       .filter(this.filterByKeyEvent(panKeyEvent))
@@ -543,7 +545,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.onPanningRescale(event);
 
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
+      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
     } else {
       console.log('on panning, but there is no callback');
     }
@@ -558,27 +560,30 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // TODO: use pan orientation
     const rescaleX = this.d3.event.transform.rescaleX(this.initScaleX);
     const rescaleY = this.d3.event.transform.rescaleY(this.initScaleY);
-    const rescaleY1 = this.d3.event.transform.rescaleY(this.initScaleY1);
     this.xAxisElement.call(this.d3.axisBottom(this.xScale).scale(rescaleX));
     this.yAxisElement.call(this.d3.axisLeft(this.yScale).scale(rescaleY));
-    this.y1AxisElement.call(this.d3.axisLeft(this.y1Scale).scale(rescaleY1));
+
+    if(this.y1AxisElement) {
+      const rescaleY1 = this.d3.event.transform.rescaleY(this.initScaleY1);
+      this.y1AxisElement.call(this.d3.axisLeft(this.y1Scale).scale(rescaleY1));
+      this.state.y1ValueRange = [rescaleY1.invert(0), rescaleY1.invert(this.height)];
+      // TODO: y1 axis jumps on panning
+      const lines = this.y1AxisElement.selectAll('line').attr('x2', 2);
+      const text = this.y1AxisElement.selectAll('text').attr('x', 5);
+    }
 
     this.state.xValueRange = [rescaleX.invert(0), rescaleX.invert(this.width)];
     this.state.yValueRange = [rescaleY.invert(0), rescaleY.invert(this.height)];
-    this.state.y1ValueRange = [rescaleY1.invert(0), rescaleY1.invert(this.height)];
+    
     this.chartContainer.select('.metrics-rect')
       .attr('transform', `translate(${translateX},${translateY}), scale(${scale})`);
-    // TODO: y1 axis jumps on panning
-    const lines = this.y1AxisElement.selectAll('line').attr('x2', 2);
-    const text = this.y1AxisElement.selectAll('text').attr('x', 5);
-    console.log('pan', lines, text);
   }
 
   protected onPanningEnd(): void {
     this.isPanning = false;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
-      this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange]);
+      this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
     } else {
       console.log('on panning end, but there is no callback');
     }
@@ -728,6 +733,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected get y1Scale(): d3.ScaleLinear<number, number> {
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
+      return null;
+    }
     // scale for y1 axis(right y axis)
     if(this._y1Scale === null) {
       let domain = this.state.y1ValueRange || [this.y1MaxValue, this.y1MinValue];
@@ -787,10 +795,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get y1MinValue(): number {
     // TODO: remove duplicates
-    if(this.isSeriesUnavailable) {
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this.options.axis.y1 !== undefined && this.options.axis.y1.range !== undefined) {
+    if(this.options.axis.y1.range !== undefined) {
       return min(this.options.axis.y1.range);
     }
     const minValue = min(
@@ -804,7 +812,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   get y1MaxValue(): number {
-    if(this.isSeriesUnavailable) {
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
       return DEFAULT_AXIS_RANGE[1];
     }
     if(this.options.axis.y1 !== undefined && this.options.axis.y1.range !== undefined) {
@@ -1028,8 +1036,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected clearScaleCache(): void {
     this._xScale = null;
     this._yScale = null;
+    this._y1Scale = null;
     this.state.xValueRange = undefined;
     this.state.yValueRange = undefined;
+    this.state.y1ValueRange = undefined;
   }
 
   protected getSerieColor(idx: number): string {
