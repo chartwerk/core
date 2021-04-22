@@ -5,7 +5,8 @@ export type TimeSerie = {
   datapoints: [number, number][],
   alias?: string,
   visible?: boolean,
-  color?: string
+  color?: string,
+  yOrientation?: yAxisOrientation,
 };
 // TODO: move some options to line-chart
 export type Options = {
@@ -23,18 +24,9 @@ export type Options = {
     contextMenu: (evt: any) => void, // the same name as in d3.events
   };
   axis?: {
-    x?: {
-      format: AxisFormat;
-      range?: [number, number];
-      invert?: boolean;
-      valueFormatter?: (value: number) => string;
-    },
-    y?: {
-      format: AxisFormat;
-      range?: [number, number];
-      invert?: boolean;
-      valueFormatter?: (value: number) => string;
-    }
+    x?: AxisOption,
+    y?: AxisOption,
+    y1?: AxisOption
   };
   crosshair?: {
     orientation?: CrosshairOrientation;
@@ -84,6 +76,13 @@ export type Options = {
   renderCrosshair?: boolean;
   usePanning?: boolean;
 };
+export type AxisOption = {
+  isActive?: boolean;
+  format: AxisFormat;
+  range?: [number, number];
+  invert?: boolean;
+  valueFormatter?: (value: number) => string;
+}
 export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
@@ -130,4 +129,15 @@ export type SvgElementAttributes = {
 export enum KeyEvent {
   MAIN = 'main',
   SHIFT = 'shift'
+}
+// allow series values to affect a specific axis
+export enum xAxisOrientation {
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  BOTH = 'both'
+}
+export enum yAxisOrientation {
+  LEFT = 'left',
+  RIGHT = 'right',
+  BOTH = 'both'
 }

@@ -10,6 +10,7 @@ export declare type TimeSerie = {
     alias?: string;
     visible?: boolean;
     color?: string;
+    yOrientation?: yAxisOrientation;
 };
 export declare type Options = {
     margin?: Margin;
@@ -26,18 +27,9 @@ export declare type Options = {
         contextMenu: (evt: any) => void;
     };
     axis?: {
-        x?: {
-            format: AxisFormat;
-            range?: [number, number];
-            invert?: boolean;
-            valueFormatter?: (value: number) => string;
-        };
-        y?: {
-            format: AxisFormat;
-            range?: [number, number];
-            invert?: boolean;
-            valueFormatter?: (value: number) => string;
-        };
+        x?: AxisOption;
+        y?: AxisOption;
+        y1?: AxisOption;
     };
     crosshair?: {
         orientation?: CrosshairOrientation;
@@ -87,6 +79,13 @@ export declare type Options = {
     renderCrosshair?: boolean;
     usePanning?: boolean;
 };
+export declare type AxisOption = {
+    isActive?: boolean;
+    format: AxisFormat;
+    range?: [number, number];
+    invert?: boolean;
+    valueFormatter?: (value: number) => string;
+};
 export declare type AxisRange = [number, number] | undefined;
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export declare enum TickOrientation {
@@ -133,4 +132,14 @@ export declare type SvgElementAttributes = {
 export declare enum KeyEvent {
     MAIN = "main",
     SHIFT = "shift"
+}
+export declare enum xAxisOrientation {
+    TOP = "top",
+    BOTTOM = "bottom",
+    BOTH = "both"
+}
+export declare enum yAxisOrientation {
+    LEFT = "left",
+    RIGHT = "right",
+    BOTH = "both"
 }

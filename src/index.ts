@@ -14,7 +14,9 @@ import {
   CrosshairOrientation,
   SvgElementAttributes,
   KeyEvent,
-  PanOrientation
+  PanOrientation,
+  yAxisOrientation,
+  AxisOption
 } from './types';
 import { uid } from './utils';
 import { palette } from './colors';
@@ -69,9 +71,15 @@ const DEFAULT_OPTIONS: Options = {
   },
   axis: {
     x: {
+      isActive: true,
       format: AxisFormat.TIME
     },
     y: {
+      isActive: true,
+      format: AxisFormat.NUMERIC
+    },
+    y1: {
+      isActive: false,
       format: AxisFormat.NUMERIC
     }
   },
@@ -103,14 +111,18 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected brushStartSelection: [number, number] | null = null;
   protected initScaleX?: d3.ScaleLinear<any, any>;
   protected initScaleY?: d3.ScaleLinear<any, any>;
+  protected initScaleY1?: d3.ScaleLinear<any, any>;
   protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _clipPathUID = '';
   protected options: O;
   protected readonly d3: typeof d3;
 
+  // TODO: test variables instead of functions with cache
   private _xScale: d3.ScaleLinear<number, number> | null = null;
   private _yScale: d3.ScaleLinear<number, number> | null = null;
+  private _y1Scale: d3.ScaleLinear<number, number> | null = null;
 
   constructor(
     // maybe it's not the best idea
@@ -264,16 +276,31 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.d3.axisLeft(this.yScale)
           .ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
-          .tickFormat(value => this.formatYAxisTicks(value))
+          .tickFormat(value => this.formatAxisTicks(this.options.axis.y, value))
       );
+
+    if(this.options.axis.y1.isActive === true) {
+      this.chartContainer.select('#y1-axis-container').remove();
+      this.y1AxisElement = this.chartContainer
+        .append('g')
+        .attr('id', 'y1-axis-container')
+        .attr('transform', `translate(${this.width},0)`)
+        // TODO: number of ticks shouldn't be hardcoded
+        .call(
+          this.d3.axisRight(this.y1Scale)
+            .ticks(DEFAULT_TICK_COUNT)
+            .tickSize(2)
+            .tickFormat(value => this.formatAxisTicks(this.options.axis.y1, value))
+        );
+    }
   }
 
-  protected formatYAxisTicks(value: d3.NumberValue): string {
+  protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string {
     // TODO: use Axis Formats for y axis
-    if(this.options.axis.y === undefined || this.options.axis.y.valueFormatter === undefined) {
+    if(axisOptions === undefined || axisOptions.valueFormatter === undefined) {
       return String(value);
     }
-    return this.options.axis.y.valueFormatter(value as number);
+    return axisOptions.valueFormatter(value as number);
   }
 
   protected renderCrosshair(): void {
@@ -397,6 +424,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     this.initScaleX = this.xScale.copy();
     this.initScaleY = this.yScale.copy();
+    this.initScaleY1 = this.y1Scale.copy();
     const panKeyEvent = this.options.zoomEvents.pan.keyEvent;
     const pan = this.d3.zoom()
       .filter(this.filterByKeyEvent(panKeyEvent))
@@ -530,13 +558,20 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // TODO: use pan orientation
     const rescaleX = this.d3.event.transform.rescaleX(this.initScaleX);
     const rescaleY = this.d3.event.transform.rescaleY(this.initScaleY);
+    const rescaleY1 = this.d3.event.transform.rescaleY(this.initScaleY1);
     this.xAxisElement.call(this.d3.axisBottom(this.xScale).scale(rescaleX));
     this.yAxisElement.call(this.d3.axisLeft(this.yScale).scale(rescaleY));
+    this.y1AxisElement.call(this.d3.axisLeft(this.y1Scale).scale(rescaleY1));
 
     this.state.xValueRange = [rescaleX.invert(0), rescaleX.invert(this.width)];
     this.state.yValueRange = [rescaleY.invert(0), rescaleY.invert(this.height)];
+    this.state.y1ValueRange = [rescaleY1.invert(0), rescaleY1.invert(this.height)];
     this.chartContainer.select('.metrics-rect')
       .attr('transform', `translate(${translateX},${translateY}), scale(${scale})`);
+    // TODO: y1 axis jumps on panning
+    const lines = this.y1AxisElement.selectAll('line').attr('x2', 2);
+    const text = this.y1AxisElement.selectAll('text').attr('x', 5);
+    console.log('pan', lines, text);
   }
 
   protected onPanningEnd(): void {
@@ -656,10 +691,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  protected scrollZoomed(): void {
-    this.chartContainer.selectAll('.scorecard').attr('transform', this.d3.event.transform);
-  }
-
   protected zoomOut(): void {
     if(this.isOutOfChart() === true) {
       return;
@@ -670,20 +701,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     } else {
       console.log('zoom out, but there is no callback');
     }
-  }
-
-  get absXScale(): d3.ScaleLinear<number, number> {
-    const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
-    return this.d3.scaleLinear()
-      .domain(domain)
-      .range([0, this.width]);
-  }
-
-  get absYScale(): d3.ScaleLinear<number, number> {
-    const domain = [0, Math.abs(this.maxValue - this.minValue)];
-    return this.d3.scaleLinear()
-      .domain(domain)
-      .range([0, this.height]);
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
@@ -710,17 +727,39 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return this._yScale;
   }
 
+  protected get y1Scale(): d3.ScaleLinear<number, number> {
+    // scale for y1 axis(right y axis)
+    if(this._y1Scale === null) {
+      let domain = this.state.y1ValueRange || [this.y1MaxValue, this.y1MinValue];
+      domain = sortBy(domain) as [number, number];
+      if(this.options.axis.y1.invert === true) {
+        domain = reverse(domain);
+      }
+      this._y1Scale = this.d3.scaleLinear()
+        .domain(domain)
+        .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
+    }
+    return this._y1Scale;
+  }
+
+  filterSerieByYAxisOrientation(serie: T, orientation: yAxisOrientation): boolean {
+    if(serie.yOrientation === undefined || serie.yOrientation === yAxisOrientation.BOTH) {
+      return true;
+    }
+    return serie.yOrientation === orientation;
+  }
+
   get minValue(): number {
     // y min value
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
     if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
-      return min(this.options.axis.y.range)
+      return min(this.options.axis.y.range);
     }
     const minValue = min(
       this.series
-        .filter(serie => serie.visible !== false)
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.LEFT))
         .map(
           serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
@@ -734,11 +773,46 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return DEFAULT_AXIS_RANGE[1];
     }
     if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
-      return max(this.options.axis.y.range)
+      return max(this.options.axis.y.range);
     }
     const maxValue = max(
       this.series
-        .filter(serie => serie.visible !== false)
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.LEFT))
+        .map(
+          serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return maxValue;
+  }
+
+  get y1MinValue(): number {
+    // TODO: remove duplicates
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[0];
+    }
+    if(this.options.axis.y1 !== undefined && this.options.axis.y1.range !== undefined) {
+      return min(this.options.axis.y1.range);
+    }
+    const minValue = min(
+      this.series
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.RIGHT))
+        .map(
+          serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return minValue;
+  }
+
+  get y1MaxValue(): number {
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[1];
+    }
+    if(this.options.axis.y1 !== undefined && this.options.axis.y1.range !== undefined) {
+      return max(this.options.axis.y1.range);
+    }
+    const maxValue = max(
+      this.series
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.RIGHT))
         .map(
           serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
@@ -1014,6 +1088,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
 export {
   ChartwerkPod, VueChartwerkPodMixin,
-  Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat,
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation,
+  AxisFormat, yAxisOrientation,
   palette
 };
