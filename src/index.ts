@@ -1099,6 +1099,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 export {
   ChartwerkPod, VueChartwerkPodMixin,
   Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation,
-  AxisFormat, yAxisOrientation,
+  AxisFormat, yAxisOrientation, CrosshairOrientation,
   palette
 };
