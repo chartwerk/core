@@ -70,8 +70,8 @@ export default {
     zoomIn(range) {
       this.$emit('zoomIn', range);
     },
-    zoomOut(center) {
-      this.$emit('zoomOut', center);
+    zoomOut(centers) {
+      this.$emit('zoomOut', centers);
     },
     mouseMove(evt) {
       this.$emit('mouseMove', evt);

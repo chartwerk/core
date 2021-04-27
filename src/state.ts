@@ -2,30 +2,6 @@ import { Options, TimeFormat, TickOrientation, AxisFormat } from './types';
 
 import lodashGet from 'lodash/get';
 
-const DEFAULT_OPTIONS: Options = {
-  confidence: 0,
-  timeInterval: {
-    timeFormat: TimeFormat.MINUTE
-  },
-  tickFormat: {
-    xAxis: '%H:%M',
-    xTickOrientation: TickOrientation.HORIZONTAL
-  },
-  axis: {
-    x: {
-      format: AxisFormat.TIME
-    },
-    y: {
-      format: AxisFormat.NUMERIC
-    }
-  },
-  renderTicksfromTimestamps: false,
-  renderYaxis: true,
-  renderXaxis: true,
-  renderGrid: true,
-  renderLegend: true,
-  renderCrosshair: true
-}
 
 const DEFAULT_TRANSFORM = {
   x: 0,

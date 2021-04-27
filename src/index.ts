@@ -72,14 +72,17 @@ const DEFAULT_OPTIONS: Options = {
   axis: {
     x: {
       isActive: true,
+      ticksCount: DEFAULT_TICK_COUNT,
       format: AxisFormat.TIME
     },
     y: {
       isActive: true,
+      ticksCount: DEFAULT_TICK_COUNT,
       format: AxisFormat.NUMERIC
     },
     y1: {
       isActive: false,
+      ticksCount: DEFAULT_TICK_COUNT,
       format: AxisFormat.NUMERIC
     }
   },
@@ -88,12 +91,9 @@ const DEFAULT_OPTIONS: Options = {
     color: 'red'
   },
   renderTicksfromTimestamps: false,
-  renderYaxis: true,
-  renderXaxis: true,
   renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true,
-  usePanning: true
+  renderCrosshair: true
 }
 
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -146,6 +146,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   public render(): void {
+    console.time('render-cw');
     this.clearScaleCache();
 
     this.renderSvg();
@@ -162,6 +163,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderLegend();
     this.renderYLabel();
     this.renderXLabel();
+    console.timeEnd('render-cw');
   }
 
   public updateData(series?: T[], options?: O, shouldRerender = true): void {
@@ -246,7 +248,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderXAxis(): void {
-    if(this.options.renderXaxis === false) {
+    if(this.options.axis.x.isActive === false) {
       return;
     }
     this.chartContainer.select('#x-axis-container').remove();
@@ -264,20 +266,19 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderYAxis(): void {
-    if(this.options.renderYaxis === false) {
-      return;
+    if(this.options.axis.y.isActive === true) {
+      this.chartContainer.select('#y-axis-container').remove();
+      this.yAxisElement = this.chartContainer
+        .append('g')
+        .attr('id', 'y-axis-container')
+        // TODO: number of ticks shouldn't be hardcoded
+        .call(
+          this.d3.axisLeft(this.yScale)
+            .ticks(this.options.axis.y.ticksCount)
+            .tickSize(2)
+            .tickFormat(value => this.formatAxisTicks(this.options.axis.y, value))
+        );
     }
-    this.chartContainer.select('#y-axis-container').remove();
-    this.yAxisElement = this.chartContainer
-      .append('g')
-      .attr('id', 'y-axis-container')
-      // TODO: number of ticks shouldn't be hardcoded
-      .call(
-        this.d3.axisLeft(this.yScale)
-          .ticks(DEFAULT_TICK_COUNT)
-          .tickSize(2)
-          .tickFormat(value => this.formatAxisTicks(this.options.axis.y, value))
-      );
 
     if(this.options.axis.y1.isActive === true) {
       this.chartContainer.select('#y1-axis-container').remove();
@@ -296,6 +297,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string {
+    if(axisOptions.ticksCount === 0) {
+      return '';
+    }
     // TODO: use Axis Formats for y axis
     if(axisOptions === undefined || axisOptions.valueFormatter === undefined) {
       return String(value);
@@ -304,9 +308,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderCrosshair(): void {
-    if(this.options.renderYaxis === false) {
-      return;
-    }
     this.crosshair = this.chartContainer.append('g')
       .attr('id', 'crosshair-container')
       .style('display', 'none');
@@ -700,9 +701,14 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isOutOfChart() === true) {
       return;
     }
-    let xAxisMiddleValue = this.xScale.invert(this.width / 2);
+    let xAxisMiddleValue: number = this.xScale.invert(this.width / 2);
+    let yAxisMiddleValue: number = this.yScale.invert(this.height / 2);
+    const centers = {
+      x: xAxisMiddleValue,
+      y: yAxisMiddleValue
+    }
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.zoomOut !== undefined) {
-      this.options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
+      this.options.eventsCallbacks.zoomOut(centers);
     } else {
       console.log('zoom out, but there is no callback');
     }
@@ -924,6 +930,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   get xAxisTicksFormat() {
+    if(this.options.axis.x.ticksCount === 0) {
+      return (d) => '';
+    }
     switch(this.options.axis.x.format) {
       case AxisFormat.TIME:
         if(this.options.tickFormat !== undefined && this.options.tickFormat.xAxis !== undefined) {

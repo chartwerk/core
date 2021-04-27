@@ -26,7 +26,7 @@ declare const _default: {
         renderChart(): void;
         appendEvents(): void;
         zoomIn(range: any): void;
-        zoomOut(center: any): void;
+        zoomOut(centers: any): void;
         mouseMove(evt: any): void;
         mouseOut(): void;
         onLegendClick(idx: any): void;

@@ -16,7 +16,7 @@ export type Options = {
     zoomIn: (range: AxisRange[]) => void,
     panning: (range: AxisRange[]) => void,
     panningEnd: (range: AxisRange[]) => void,
-    zoomOut: (center: number) => void,
+    zoomOut: (centers: {x: number, y: number}) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
     onLegendClick: (idx: number) => void,
@@ -69,15 +69,13 @@ export type Options = {
     },
   }
   renderTicksfromTimestamps?: boolean;
-  renderYaxis?: boolean;
-  renderXaxis?: boolean;
   renderGrid?: boolean;
   renderLegend?: boolean;
   renderCrosshair?: boolean;
-  usePanning?: boolean;
 };
 export type AxisOption = {
   isActive?: boolean;
+  ticksCount?: number;
   format: AxisFormat;
   range?: [number, number];
   invert?: boolean;
