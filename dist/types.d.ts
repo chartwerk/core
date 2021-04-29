@@ -59,19 +59,27 @@ export declare type Options = {
         to: number;
     };
     zoomEvents?: {
-        brush: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
-            orientation?: BrushOrientation;
-        };
-        pan: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
-            orientation?: PanOrientation;
+        mouse: {
+            zoom: {
+                isActive: boolean;
+                keyEvent: KeyEvent;
+                orientation?: BrushOrientation;
+            };
+            pan: {
+                isActive: boolean;
+                keyEvent: KeyEvent;
+                orientation?: PanOrientation;
+            };
         };
         scroll: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
+            zoom: {
+                isActive: boolean;
+            };
+            pan: {
+                isActive: boolean;
+                panStep?: number;
+                orientation?: ScrollPanOrientation;
+            };
         };
     };
     renderTicksfromTimestamps?: boolean;
@@ -112,6 +120,10 @@ export declare enum PanOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",
     BOTH = "both"
+}
+export declare enum ScrollPanOrientation {
+    VERTICAL = "vertical",
+    HORIZONTAL = "horizontal"
 }
 export declare enum AxisFormat {
     TIME = "time",

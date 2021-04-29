@@ -53,19 +53,27 @@ export type Options = {
     to: number
   };
   zoomEvents?: {
-    brush: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
-      orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
-    },
-    pan: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
-      orientation?: PanOrientation;
+    mouse: {
+      zoom: { // same as brush
+        isActive: boolean;
+        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
+      },
+      pan: {
+        isActive: boolean;
+        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        orientation?: PanOrientation;
+      },
     },
     scroll: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+      zoom: {
+        isActive: boolean;
+      },
+      pan: {
+        isActive: boolean;
+        panStep?: number;
+        orientation?: ScrollPanOrientation;
+      },
     },
   }
   renderTicksfromTimestamps?: boolean;
@@ -106,6 +114,10 @@ export enum PanOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
   BOTH = 'both',
+}
+export enum ScrollPanOrientation {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal',
 }
 export enum AxisFormat {
   TIME = 'time',

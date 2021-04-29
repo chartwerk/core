@@ -8,7 +8,17 @@ export declare class PodState {
     get xValueRange(): [number, number] | undefined;
     get yValueRange(): [number, number] | undefined;
     get y1ValueRange(): [number, number] | undefined;
+    get transform(): {
+        x?: number;
+        y?: number;
+        k?: number;
+    };
     set xValueRange(range: [number, number]);
     set yValueRange(range: [number, number]);
     set y1ValueRange(range: [number, number]);
+    set transform(transform: {
+        x?: number;
+        y?: number;
+        k?: number;
+    });
 }
