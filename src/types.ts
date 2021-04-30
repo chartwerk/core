@@ -5,36 +5,29 @@ export type TimeSerie = {
   datapoints: [number, number][],
   alias?: string,
   visible?: boolean,
-  color?: string
+  color?: string,
+  yOrientation?: yAxisOrientation,
 };
 // TODO: move some options to line-chart
 export type Options = {
   margin?: Margin;
   confidence?: number;
   eventsCallbacks?: {
-    zoomIn: (range: [AxisRange, AxisRange]) => void,
-    panning: (range: [AxisRange, AxisRange]) => void,
-    panningEnd: (range: [AxisRange, AxisRange]) => void,
-    zoomOut: (center: number) => void,
+    zoomIn: (range: AxisRange[]) => void,
+    panning: (range: AxisRange[]) => void,
+    panningEnd: (range: AxisRange[]) => void,
+    zoomOut: (centers: {x: number, y: number}) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
     onLegendClick: (idx: number) => void,
     onLegendLabelClick: (idx: number) => void,
     contextMenu: (evt: any) => void, // the same name as in d3.events
+    sharedCrosshairMove: (event: any) => void
   };
   axis?: {
-    x?: {
-      format: AxisFormat;
-      range?: [number, number];
-      invert?: boolean;
-      valueFormatter?: (value: number) => string;
-    },
-    y?: {
-      format: AxisFormat;
-      range?: [number, number];
-      invert?: boolean;
-      valueFormatter?: (value: number) => string;
-    }
+    x?: AxisOption,
+    y?: AxisOption,
+    y1?: AxisOption
   };
   crosshair?: {
     orientation?: CrosshairOrientation;
@@ -61,29 +54,44 @@ export type Options = {
     to: number
   };
   zoomEvents?: {
-    brush: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
-      orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
-    },
-    pan: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
-      orientation?: PanOrientation;
+    mouse: {
+      zoom: { // same as brush
+        isActive: boolean;
+        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
+      },
+      pan: {
+        isActive: boolean;
+        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        orientation?: PanOrientation;
+      },
     },
     scroll: {
-      isActive: boolean;
-      keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+      zoom: {
+        isActive: boolean;
+        keyEvent?: KeyEvent;
+      },
+      pan: {
+        isActive: boolean;
+        keyEvent?: KeyEvent;
+        panStep?: number;
+        orientation?: ScrollPanOrientation;
+      },
     },
   }
   renderTicksfromTimestamps?: boolean;
-  renderYaxis?: boolean;
-  renderXaxis?: boolean;
   renderGrid?: boolean;
   renderLegend?: boolean;
   renderCrosshair?: boolean;
-  usePanning?: boolean;
 };
+export type AxisOption = {
+  isActive?: boolean;
+  ticksCount?: number;
+  format: AxisFormat;
+  range?: [number, number];
+  invert?: boolean;
+  valueFormatter?: (value: number) => string;
+}
 export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
@@ -110,6 +118,10 @@ export enum PanOrientation {
   HORIZONTAL = 'horizontal',
   BOTH = 'both',
 }
+export enum ScrollPanOrientation {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal',
+}
 export enum AxisFormat {
   TIME = 'time',
   NUMERIC = 'numeric',
@@ -130,4 +142,15 @@ export type SvgElementAttributes = {
 export enum KeyEvent {
   MAIN = 'main',
   SHIFT = 'shift'
+}
+// allow series values to affect a specific axis
+export enum xAxisOrientation {
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  BOTH = 'both'
+}
+export enum yAxisOrientation {
+  LEFT = 'left',
+  RIGHT = 'right',
+  BOTH = 'both'
 }

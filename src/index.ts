@@ -14,7 +14,10 @@ import {
   CrosshairOrientation,
   SvgElementAttributes,
   KeyEvent,
-  PanOrientation
+  PanOrientation,
+  yAxisOrientation,
+  ScrollPanOrientation,
+  AxisOption
 } from './types';
 import { uid } from './utils';
 import { palette } from './colors';
@@ -42,6 +45,7 @@ const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
 const DEFAULT_TICK_COUNT = 4;
 const MILISECONDS_IN_MINUTE = 60 * 1000;
 const DEFAULT_AXIS_RANGE = [0, 1];
+const DEFAULT_SCROLL_PAN_STEP = 50;
 const DEFAULT_OPTIONS: Options = {
   confidence: 0,
   timeInterval: {
@@ -52,26 +56,45 @@ const DEFAULT_OPTIONS: Options = {
     xTickOrientation: TickOrientation.HORIZONTAL
   },
   zoomEvents: {
-    brush: {
-      isActive: true,
-      keyEvent: KeyEvent.MAIN,
-      orientation: BrushOrientation.HORIZONTAL
-    },
-    pan: {
-      isActive: true,
-      keyEvent: KeyEvent.SHIFT,
-      orientation: PanOrientation.HORIZONTAL
+    mouse: {
+      zoom: {
+        isActive: true,
+        keyEvent: KeyEvent.MAIN,
+        orientation: BrushOrientation.HORIZONTAL
+      },
+      pan: {
+        isActive: true,
+        keyEvent: KeyEvent.SHIFT,
+        orientation: PanOrientation.HORIZONTAL
+      },
     },
     scroll: {
-      isActive: false,
-      keyEvent: KeyEvent.SHIFT,
+      zoom: {
+        isActive: true,
+        keyEvent: KeyEvent.MAIN,
+      },
+      pan: {
+        isActive: false,
+        keyEvent: KeyEvent.SHIFT,
+        panStep: DEFAULT_SCROLL_PAN_STEP,
+        orientation: ScrollPanOrientation.HORIZONTAL,
+      },
     },
   },
   axis: {
     x: {
+      isActive: true,
+      ticksCount: DEFAULT_TICK_COUNT,
       format: AxisFormat.TIME
     },
     y: {
+      isActive: true,
+      ticksCount: DEFAULT_TICK_COUNT,
+      format: AxisFormat.NUMERIC
+    },
+    y1: {
+      isActive: false,
+      ticksCount: DEFAULT_TICK_COUNT,
       format: AxisFormat.NUMERIC
     }
   },
@@ -80,12 +103,9 @@ const DEFAULT_OPTIONS: Options = {
     color: 'red'
   },
   renderTicksfromTimestamps: false,
-  renderYaxis: true,
-  renderXaxis: true,
   renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true,
-  usePanning: true
+  renderCrosshair: true
 }
 
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -103,14 +123,18 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected brushStartSelection: [number, number] | null = null;
   protected initScaleX?: d3.ScaleLinear<any, any>;
   protected initScaleY?: d3.ScaleLinear<any, any>;
+  protected initScaleY1?: d3.ScaleLinear<any, any>;
   protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _clipPathUID = '';
   protected options: O;
   protected readonly d3: typeof d3;
 
+  // TODO: test variables instead of functions with cache
   private _xScale: d3.ScaleLinear<number, number> | null = null;
   private _yScale: d3.ScaleLinear<number, number> | null = null;
+  private _y1Scale: d3.ScaleLinear<number, number> | null = null;
 
   constructor(
     // maybe it's not the best idea
@@ -182,7 +206,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected abstract onMouseOver(): void;
   protected abstract onMouseOut(): void;
   protected abstract onMouseMove(): void;
-  public abstract renderSharedCrosshair(timestamp: number): void;
+  public abstract renderSharedCrosshair(values: { x?: number, y?: number }): void;
   public abstract hideSharedCrosshair(): void;
 
   protected initPodState() {
@@ -234,7 +258,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderXAxis(): void {
-    if(this.options.renderXaxis === false) {
+    if(this.options.axis.x.isActive === false) {
       return;
     }
     this.chartContainer.select('#x-axis-container').remove();
@@ -252,34 +276,48 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderYAxis(): void {
-    if(this.options.renderYaxis === false) {
-      return;
+    if(this.options.axis.y.isActive === true) {
+      this.chartContainer.select('#y-axis-container').remove();
+      this.yAxisElement = this.chartContainer
+        .append('g')
+        .attr('id', 'y-axis-container')
+        // TODO: number of ticks shouldn't be hardcoded
+        .call(
+          this.d3.axisLeft(this.yScale)
+            .ticks(this.options.axis.y.ticksCount)
+            .tickSize(2)
+            .tickFormat(value => this.formatAxisTicks(this.options.axis.y, value))
+        );
     }
-    this.chartContainer.select('#y-axis-container').remove();
-    this.yAxisElement = this.chartContainer
-      .append('g')
-      .attr('id', 'y-axis-container')
-      // TODO: number of ticks shouldn't be hardcoded
-      .call(
-        this.d3.axisLeft(this.yScale)
-          .ticks(DEFAULT_TICK_COUNT)
-          .tickSize(2)
-          .tickFormat(value => this.formatYAxisTicks(value))
-      );
+
+    if(this.options.axis.y1.isActive === true) {
+      this.chartContainer.select('#y1-axis-container').remove();
+      this.y1AxisElement = this.chartContainer
+        .append('g')
+        .attr('id', 'y1-axis-container')
+        .attr('transform', `translate(${this.width},0)`)
+        // TODO: number of ticks shouldn't be hardcoded
+        .call(
+          this.d3.axisRight(this.y1Scale)
+            .ticks(DEFAULT_TICK_COUNT)
+            .tickSize(2)
+            .tickFormat(value => this.formatAxisTicks(this.options.axis.y1, value))
+        );
+    }
   }
 
-  protected formatYAxisTicks(value: d3.NumberValue): string {
+  protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string {
+    if(axisOptions.ticksCount === 0) {
+      return '';
+    }
     // TODO: use Axis Formats for y axis
-    if(this.options.axis.y === undefined || this.options.axis.y.valueFormatter === undefined) {
+    if(axisOptions === undefined || axisOptions.valueFormatter === undefined) {
       return String(value);
     }
-    return this.options.axis.y.valueFormatter(value as number);
+    return axisOptions.valueFormatter(value as number);
   }
 
   protected renderCrosshair(): void {
-    if(this.options.renderYaxis === false) {
-      return;
-    }
     this.crosshair = this.chartContainer.append('g')
       .attr('id', 'crosshair-container')
       .style('display', 'none');
@@ -315,8 +353,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected addEvents(): void {
-    const panKeyEvent = this.options.zoomEvents.pan.keyEvent;
-    const isPanActive = this.options.zoomEvents.pan.isActive;
+    // TODO: refactor for a new mouse/scroll events
+    const panKeyEvent = this.options.zoomEvents.mouse.pan.keyEvent;
+    const isPanActive = this.options.zoomEvents.mouse.pan.isActive;
     if(isPanActive === true && panKeyEvent === KeyEvent.MAIN) {
       this.initPan();
       this.initBrush();
@@ -333,11 +372,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected initBrush(): void {
-    const isBrushActive = this.options.zoomEvents.brush.isActive;
+    const isBrushActive = this.options.zoomEvents.mouse.zoom.isActive;
     if(isBrushActive === false) {
       return;
     }
-    switch(this.options.zoomEvents.brush.orientation) {
+    switch(this.options.zoomEvents.mouse.zoom.orientation) {
       case BrushOrientation.VERTICAL:
         this.brush = this.d3.brushY();
         break;
@@ -351,7 +390,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       default:
         this.brush = this.d3.brushX();
     }
-    const keyEvent = this.options.zoomEvents.brush.keyEvent;
+    const keyEvent = this.options.zoomEvents.mouse.zoom.keyEvent;
     this.brush.extent([
         [0, 0],
         [this.width, this.height]
@@ -378,11 +417,24 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
+  protected isD3EventKeyEqualOption(event: d3.D3ZoomEvent<any, any>, optionsKeyEvent: KeyEvent): boolean {
+    if(!event || !event.sourceEvent) {
+      return false;
+    }
+    const isShiftKey = event.sourceEvent.shiftKey;
+    const isOptionShift = optionsKeyEvent === KeyEvent.SHIFT;
+    return isShiftKey === isOptionShift;
+  }
+
   protected initPan(): void {
-    if(this.options.zoomEvents.pan.isActive === false) {
+    if(
+      this.options.zoomEvents.mouse.pan.isActive === false &&
+      this.options.zoomEvents.scroll.pan.isActive === false &&
+      this.options.zoomEvents.scroll.zoom.isActive === false
+    ) {
       return;
     }
-    if(this.options.zoomEvents.brush.isActive === false) {
+    if(this.options.zoomEvents.mouse.zoom.isActive === false) {
       // init cumstom overlay to handle all events
       this.customOverlay = this.chartContainer.append('rect')
         .attr('class', 'custom-overlay')
@@ -397,10 +449,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     this.initScaleX = this.xScale.copy();
     this.initScaleY = this.yScale.copy();
-    const panKeyEvent = this.options.zoomEvents.pan.keyEvent;
+    if(this.options.axis.y1.isActive === true) {
+      this.initScaleY1 = this.y1Scale.copy();
+    }
     const pan = this.d3.zoom()
-      .filter(this.filterByKeyEvent(panKeyEvent))
-      .on('zoom', this.onPanningZoom.bind(this))
+      .on('zoom', this.onPanning.bind(this))
       .on('end', this.onPanningEnd.bind(this));
 
     this.chartContainer.call(pan);
@@ -504,7 +557,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  protected onPanningZoom(): void {
+  protected onPanning(): void {
     const event = this.d3.event;
     if(event.sourceEvent === null || event.sourceEvent === undefined) {
       return;
@@ -514,8 +567,19 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     this.onPanningRescale(event);
 
+    const shouldClearState = false;
+    this.clearScaleCache(shouldClearState);
+    this.renderYAxis();
+    this.renderXAxis();
+
+    this.chartContainer.select('.metrics-rect')
+      .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
+    // TODO: move metric-rect to core. Now it is in Pod
+    this.chartContainer.selectAll('.metric-el')
+      .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
+
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange]);
+      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
     } else {
       console.log('on panning, but there is no callback');
     }
@@ -523,27 +587,84 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     // rescale metrics and axis on mouse and scroll panning
-    const scale = event.transform.k;
-    const translateX = event.transform.x;
-    const translateY = event.transform.y;
+    const eventType = event.sourceEvent.type; // 'wheel' or 'mousemove'
+    const scrollPanOptions = this.options.zoomEvents.scroll.pan;
+    const scrollZoomOptions = this.options.zoomEvents.scroll.zoom;
+    // TODO: maybe use switch and move it to onPanning
+    if(eventType === 'wheel') {
+      if(scrollPanOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollPanOptions.keyEvent)) {
+        this.onScrollPanningRescale(event);
+        return;
+      }
+      if(scrollZoomOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollZoomOptions.keyEvent)) {
+        this.state.transform = { k: event.transform.k };
+      }
+    }
 
-    // TODO: use pan orientation
-    const rescaleX = this.d3.event.transform.rescaleX(this.initScaleX);
-    const rescaleY = this.d3.event.transform.rescaleY(this.initScaleY);
-    this.xAxisElement.call(this.d3.axisBottom(this.xScale).scale(rescaleX));
-    this.yAxisElement.call(this.d3.axisLeft(this.yScale).scale(rescaleY));
+    const panOrientation = this.options.zoomEvents.mouse.pan.orientation;
+    if(panOrientation === PanOrientation.HORIZONTAL || panOrientation === PanOrientation.BOTH) {
+      this.state.transform = { x: event.transform.x };
+      const rescaleX = this.d3.event.transform.rescaleX(this.initScaleX);
+      this.xAxisElement.call(this.d3.axisBottom(this.xScale).scale(rescaleX));
+      this.state.xValueRange = [rescaleX.invert(0), rescaleX.invert(this.width)];
+    }
+    if(panOrientation === PanOrientation.VERTICAL || panOrientation === PanOrientation.BOTH) {
+      this.state.transform = { y: event.transform.y };
+      const rescaleY = this.d3.event.transform.rescaleY(this.initScaleY);
+      this.yAxisElement.call(this.d3.axisLeft(this.yScale).scale(rescaleY));
+      this.state.yValueRange = [rescaleY.invert(0), rescaleY.invert(this.height)];
+      if(this.y1AxisElement) {
+        const rescaleY1 = this.d3.event.transform.rescaleY(this.initScaleY1);
+        this.y1AxisElement.call(this.d3.axisLeft(this.y1Scale).scale(rescaleY1));
+        this.state.y1ValueRange = [rescaleY1.invert(0), rescaleY1.invert(this.height)];
+        // TODO: y1 axis jumps on panning
+        this.y1AxisElement.selectAll('line').attr('x2', 2);
+        this.y1AxisElement.selectAll('text').attr('x', 5);
+      }
+    }
+  }
 
-    this.state.xValueRange = [rescaleX.invert(0), rescaleX.invert(this.width)];
-    this.state.yValueRange = [rescaleY.invert(0), rescaleY.invert(this.height)];
-    this.chartContainer.select('.metrics-rect')
-      .attr('transform', `translate(${translateX},${translateY}), scale(${scale})`);
+  onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+    const scrollPanOptions = this.options.zoomEvents.scroll.pan;
+    // TODO: event.transform.y / x depends on mouse position, so we use hardcoded const, which should be removed
+    const transformStep = scrollPanOptions.panStep;
+    const scrollPanOrientation = scrollPanOptions.orientation;
+    switch(scrollPanOrientation) {
+      case ScrollPanOrientation.HORIZONTAL:
+        // @ts-ignore
+        const signX = Math.sign(event.transform.x);
+        const transformX = this.absXScale.invert(Math.abs(transformStep));
+        let rangeX = this.state.xValueRange;
+        if(this.state.xValueRange === undefined) {
+          rangeX = [this.maxValueX, this.minValueX];
+        }
+        this.state.xValueRange = [rangeX[0] + signX * transformX, rangeX[1] + signX * transformX];
+        const translateX = this.state.transform.x + signX * transformStep;
+        this.state.transform = { x: translateX };
+        break;
+      case ScrollPanOrientation.VERTICAL:
+        // @ts-ignore
+        let signY = Math.sign(event.transform.y);
+        if(this.options.axis.y.invert === true) {
+          signY = -signY;
+        }
+        let rangeY = this.state.yValueRange || [this.maxValue, this.minValue];
+        const transformY = this.absYScale.invert(Math.abs(transformStep));
+        this.state.yValueRange = [rangeY[0] - signY * transformY, rangeY[1] - signY * transformY];
+        const translateY = this.state.transform.y + signY * transformStep;
+        this.state.transform = { y: translateY };
+        // TODO: add y1 rescale
+        break;
+      default:
+        throw new Error(`Unknown type of scroll pan orientation: ${scrollPanOrientation}`);
+    }
   }
 
   protected onPanningEnd(): void {
     this.isPanning = false;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
-      this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange]);
+      this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
     } else {
       console.log('on panning end, but there is no callback');
     }
@@ -551,7 +672,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onBrush(): void {
     const selection = this.d3.event.selection;
-    if(this.options.zoomEvents.brush.orientation !== BrushOrientation.SQUARE || selection === null) {
+    if(this.options.zoomEvents.mouse.zoom.orientation !== BrushOrientation.SQUARE || selection === null) {
       return;
     }
     const selectionAtts = this.getSelectionAttrs(selection);
@@ -606,7 +727,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     let xRange: [number, number];
     let yRange: [number, number];
-    switch(this.options.zoomEvents.brush.orientation) {
+    switch(this.options.zoomEvents.mouse.zoom.orientation) {
       case BrushOrientation.HORIZONTAL:
         const startTimestamp = this.xScale.invert(extent[0]);
         const endTimestamp = this.xScale.invert(extent[1]);
@@ -656,17 +777,18 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  protected scrollZoomed(): void {
-    this.chartContainer.selectAll('.scorecard').attr('transform', this.d3.event.transform);
-  }
-
   protected zoomOut(): void {
     if(this.isOutOfChart() === true) {
       return;
     }
-    let xAxisMiddleValue = this.xScale.invert(this.width / 2);
+    let xAxisMiddleValue: number = this.xScale.invert(this.width / 2);
+    let yAxisMiddleValue: number = this.yScale.invert(this.height / 2);
+    const centers = {
+      x: xAxisMiddleValue,
+      y: yAxisMiddleValue
+    }
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.zoomOut !== undefined) {
-      this.options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
+      this.options.eventsCallbacks.zoomOut(centers);
     } else {
       console.log('zoom out, but there is no callback');
     }
@@ -710,17 +832,42 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return this._yScale;
   }
 
+  protected get y1Scale(): d3.ScaleLinear<number, number> {
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
+      return null;
+    }
+    // scale for y1 axis(right y axis)
+    if(this._y1Scale === null) {
+      let domain = this.state.y1ValueRange || [this.y1MaxValue, this.y1MinValue];
+      domain = sortBy(domain) as [number, number];
+      if(this.options.axis.y1.invert === true) {
+        domain = reverse(domain);
+      }
+      this._y1Scale = this.d3.scaleLinear()
+        .domain(domain)
+        .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
+    }
+    return this._y1Scale;
+  }
+
+  filterSerieByYAxisOrientation(serie: T, orientation: yAxisOrientation): boolean {
+    if(serie.yOrientation === undefined || serie.yOrientation === yAxisOrientation.BOTH) {
+      return true;
+    }
+    return serie.yOrientation === orientation;
+  }
+
   get minValue(): number {
     // y min value
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
     if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
-      return min(this.options.axis.y.range)
+      return min(this.options.axis.y.range);
     }
     const minValue = min(
       this.series
-        .filter(serie => serie.visible !== false)
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.LEFT))
         .map(
           serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
@@ -734,11 +881,46 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return DEFAULT_AXIS_RANGE[1];
     }
     if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
-      return max(this.options.axis.y.range)
+      return max(this.options.axis.y.range);
     }
     const maxValue = max(
       this.series
-        .filter(serie => serie.visible !== false)
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.LEFT))
+        .map(
+          serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return maxValue;
+  }
+
+  get y1MinValue(): number {
+    // TODO: remove duplicates
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
+      return DEFAULT_AXIS_RANGE[0];
+    }
+    if(this.options.axis.y1.range !== undefined) {
+      return min(this.options.axis.y1.range);
+    }
+    const minValue = min(
+      this.series
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.RIGHT))
+        .map(
+          serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return minValue;
+  }
+
+  get y1MaxValue(): number {
+    if(this.isSeriesUnavailable || this.options.axis.y1 === undefined || this.options.axis.y1.isActive === false) {
+      return DEFAULT_AXIS_RANGE[1];
+    }
+    if(this.options.axis.y1 !== undefined && this.options.axis.y1.range !== undefined) {
+      return max(this.options.axis.y1.range);
+    }
+    const maxValue = max(
+      this.series
+        .filter(serie => serie.visible !== false && this.filterSerieByYAxisOrientation(serie, yAxisOrientation.RIGHT))
         .map(
           serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
@@ -842,6 +1024,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   get xAxisTicksFormat() {
+    if(this.options.axis.x.ticksCount === 0) {
+      return (d) => '';
+    }
     switch(this.options.axis.x.format) {
       case AxisFormat.TIME:
         if(this.options.tickFormat !== undefined && this.options.tickFormat.xAxis !== undefined) {
@@ -951,11 +1136,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return confidenceMetric;
   }
 
-  protected clearScaleCache(): void {
+  protected clearScaleCache(shouldClearState = true): void {
     this._xScale = null;
     this._yScale = null;
-    this.state.xValueRange = undefined;
-    this.state.yValueRange = undefined;
+    this._y1Scale = null;
+    if(shouldClearState) {
+      this.state.xValueRange = undefined;
+      this.state.yValueRange = undefined;
+      this.state.y1ValueRange = undefined;
+    }
   }
 
   protected getSerieColor(idx: number): string {
@@ -1014,6 +1203,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
 export {
   ChartwerkPod, VueChartwerkPodMixin,
-  Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat,
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation,
+  AxisFormat, yAxisOrientation, CrosshairOrientation, ScrollPanOrientation,
   palette
 };

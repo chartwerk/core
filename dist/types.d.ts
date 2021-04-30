@@ -10,34 +10,30 @@ export declare type TimeSerie = {
     alias?: string;
     visible?: boolean;
     color?: string;
+    yOrientation?: yAxisOrientation;
 };
 export declare type Options = {
     margin?: Margin;
     confidence?: number;
     eventsCallbacks?: {
-        zoomIn: (range: [AxisRange, AxisRange]) => void;
-        panning: (range: [AxisRange, AxisRange]) => void;
-        panningEnd: (range: [AxisRange, AxisRange]) => void;
-        zoomOut: (center: number) => void;
+        zoomIn: (range: AxisRange[]) => void;
+        panning: (range: AxisRange[]) => void;
+        panningEnd: (range: AxisRange[]) => void;
+        zoomOut: (centers: {
+            x: number;
+            y: number;
+        }) => void;
         mouseMove: (evt: any) => void;
         mouseOut: () => void;
         onLegendClick: (idx: number) => void;
         onLegendLabelClick: (idx: number) => void;
         contextMenu: (evt: any) => void;
+        sharedCrosshairMove: (event: any) => void;
     };
     axis?: {
-        x?: {
-            format: AxisFormat;
-            range?: [number, number];
-            invert?: boolean;
-            valueFormatter?: (value: number) => string;
-        };
-        y?: {
-            format: AxisFormat;
-            range?: [number, number];
-            invert?: boolean;
-            valueFormatter?: (value: number) => string;
-        };
+        x?: AxisOption;
+        y?: AxisOption;
+        y1?: AxisOption;
     };
     crosshair?: {
         orientation?: CrosshairOrientation;
@@ -64,28 +60,43 @@ export declare type Options = {
         to: number;
     };
     zoomEvents?: {
-        brush: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
-            orientation?: BrushOrientation;
-        };
-        pan: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
-            orientation?: PanOrientation;
+        mouse: {
+            zoom: {
+                isActive: boolean;
+                keyEvent: KeyEvent;
+                orientation?: BrushOrientation;
+            };
+            pan: {
+                isActive: boolean;
+                keyEvent: KeyEvent;
+                orientation?: PanOrientation;
+            };
         };
         scroll: {
-            isActive: boolean;
-            keyEvent: KeyEvent;
+            zoom: {
+                isActive: boolean;
+                keyEvent?: KeyEvent;
+            };
+            pan: {
+                isActive: boolean;
+                keyEvent?: KeyEvent;
+                panStep?: number;
+                orientation?: ScrollPanOrientation;
+            };
         };
     };
     renderTicksfromTimestamps?: boolean;
-    renderYaxis?: boolean;
-    renderXaxis?: boolean;
     renderGrid?: boolean;
     renderLegend?: boolean;
     renderCrosshair?: boolean;
-    usePanning?: boolean;
+};
+export declare type AxisOption = {
+    isActive?: boolean;
+    ticksCount?: number;
+    format: AxisFormat;
+    range?: [number, number];
+    invert?: boolean;
+    valueFormatter?: (value: number) => string;
 };
 export declare type AxisRange = [number, number] | undefined;
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;
@@ -113,6 +124,10 @@ export declare enum PanOrientation {
     HORIZONTAL = "horizontal",
     BOTH = "both"
 }
+export declare enum ScrollPanOrientation {
+    VERTICAL = "vertical",
+    HORIZONTAL = "horizontal"
+}
 export declare enum AxisFormat {
     TIME = "time",
     NUMERIC = "numeric",
@@ -133,4 +148,14 @@ export declare type SvgElementAttributes = {
 export declare enum KeyEvent {
     MAIN = "main",
     SHIFT = "shift"
+}
+export declare enum xAxisOrientation {
+    TOP = "top",
+    BOTTOM = "bottom",
+    BOTH = "both"
+}
+export declare enum yAxisOrientation {
+    LEFT = "left",
+    RIGHT = "right",
+    BOTH = "both"
 }

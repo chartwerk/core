@@ -1,31 +1,8 @@
 import { Options, TimeFormat, TickOrientation, AxisFormat } from './types';
 
 import lodashGet from 'lodash/get';
+import cloneDeep from 'lodash/cloneDeep';
 
-const DEFAULT_OPTIONS: Options = {
-  confidence: 0,
-  timeInterval: {
-    timeFormat: TimeFormat.MINUTE
-  },
-  tickFormat: {
-    xAxis: '%H:%M',
-    xTickOrientation: TickOrientation.HORIZONTAL
-  },
-  axis: {
-    x: {
-      format: AxisFormat.TIME
-    },
-    y: {
-      format: AxisFormat.NUMERIC
-    }
-  },
-  renderTicksfromTimestamps: false,
-  renderYaxis: true,
-  renderXaxis: true,
-  renderGrid: true,
-  renderLegend: true,
-  renderCrosshair: true
-}
 
 const DEFAULT_TRANSFORM = {
   x: 0,
@@ -36,13 +13,15 @@ const DEFAULT_TRANSFORM = {
 export class PodState {
   private _xValueRange: [number, number] | undefined = undefined;
   private _yValueRange: [number, number] | undefined = undefined;
-  private _transform: { x: number, y: number, k: number } = DEFAULT_TRANSFORM;
+  private _y1ValueRange: [number, number] | undefined = undefined;
+  private _transform: { x: number, y: number, k: number } = cloneDeep(DEFAULT_TRANSFORM);
 
   constructor(
     options: Options
   ) {
     this._xValueRange = lodashGet(options, 'axis.x.range');
     this._yValueRange = lodashGet(options, 'axis.y.range');
+    this._y1ValueRange = lodashGet(options, 'axis.y1.range');
   }
 
   get xValueRange(): [number, number] | undefined {
@@ -53,11 +32,29 @@ export class PodState {
     return this._yValueRange;
   }
 
+  get y1ValueRange(): [number, number] | undefined {
+    return this._y1ValueRange;
+  }
+
+  get transform(): { x?: number, y?: number, k?: number } {
+    return this._transform;
+  }
+
   set xValueRange(range: [number, number]) {
     this._xValueRange = range;
   }
 
   set yValueRange(range: [number, number]) {
     this._yValueRange = range;
+  }
+
+  set y1ValueRange(range: [number, number]) {
+    this._y1ValueRange = range;
+  }
+
+  set transform(transform: { x?: number, y?: number, k?: number }) {
+    this._transform.x = transform.x || this._transform.x;
+    this._transform.y = transform.y || this._transform.y;
+    this._transform.k = transform.k || this._transform.k;
   }
 }
