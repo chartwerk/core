@@ -38,6 +38,9 @@ export default {
       this.appendEvents();
       this.render();
     },
+    renderSharedCrosshair(values: { x?: number, y?: number }) {
+      this.renderSharedCrosshair(values);
+    },
     appendEvents() {
       if(this.options.eventsCallbacks === undefined) {
         this.options.eventsCallbacks = {}

@@ -24,6 +24,10 @@ declare const _default: {
     methods: {
         render(): void;
         renderChart(): void;
+        renderSharedCrosshair(values: {
+            x?: number;
+            y?: number;
+        }): void;
         appendEvents(): void;
         zoomIn(range: any): void;
         zoomOut(centers: any): void;
