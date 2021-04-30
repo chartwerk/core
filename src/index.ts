@@ -71,9 +71,11 @@ const DEFAULT_OPTIONS: Options = {
     scroll: {
       zoom: {
         isActive: true,
+        keyEvent: KeyEvent.MAIN,
       },
       pan: {
         isActive: false,
+        keyEvent: KeyEvent.SHIFT,
         panStep: DEFAULT_SCROLL_PAN_STEP,
         orientation: ScrollPanOrientation.HORIZONTAL,
       },
@@ -415,6 +417,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
+  protected isD3EventKeyEqualOption(event: d3.D3ZoomEvent<any, any>, optionsKeyEvent: KeyEvent): boolean {
+    if(!event || !event.sourceEvent) {
+      return false;
+    }
+    const isShiftKey = event.sourceEvent.shiftKey;
+    const isOptionShift = optionsKeyEvent === KeyEvent.SHIFT;
+    return isShiftKey === isOptionShift;
+  }
+
   protected initPan(): void {
     if(
       this.options.zoomEvents.mouse.pan.isActive === false &&
@@ -441,9 +452,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.axis.y1.isActive === true) {
       this.initScaleY1 = this.y1Scale.copy();
     }
-    const panKeyEvent = this.options.zoomEvents.mouse.pan.keyEvent;
     const pan = this.d3.zoom()
-      .filter(this.filterByKeyEvent(panKeyEvent))
       .on('zoom', this.onPanning.bind(this))
       .on('end', this.onPanningEnd.bind(this));
 
@@ -579,14 +588,17 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     // rescale metrics and axis on mouse and scroll panning
     const eventType = event.sourceEvent.type; // 'wheel' or 'mousemove'
+    const scrollPanOptions = this.options.zoomEvents.scroll.pan;
+    const scrollZoomOptions = this.options.zoomEvents.scroll.zoom;
     // TODO: maybe use switch and move it to onPanning
-    if(eventType === 'wheel' && this.options.zoomEvents.scroll.pan.isActive === true) {
-      this.onScrollPanningRescale(event);
-      return;
-    }
-
-    if(this.options.zoomEvents.scroll.zoom.isActive === true) {
-      this.state.transform = { k: event.transform.k };
+    if(eventType === 'wheel') {
+      if(scrollPanOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollPanOptions.keyEvent)) {
+        this.onScrollPanningRescale(event);
+        return;
+      }
+      if(scrollZoomOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollZoomOptions.keyEvent)) {
+        this.state.transform = { k: event.transform.k };
+      }
     }
 
     const panOrientation = this.options.zoomEvents.mouse.pan.orientation;
@@ -613,9 +625,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+    const scrollPanOptions = this.options.zoomEvents.scroll.pan;
     // TODO: event.transform.y / x depends on mouse position, so we use hardcoded const, which should be removed
-    const transformStep = this.options.zoomEvents.scroll.pan.panStep;
-    const scrollPanOrientation = this.options.zoomEvents.scroll.pan.orientation;
+    const transformStep = scrollPanOptions.panStep;
+    const scrollPanOrientation = scrollPanOptions.orientation;
     switch(scrollPanOrientation) {
       case ScrollPanOrientation.HORIZONTAL:
         // @ts-ignore

@@ -54,6 +54,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected addEvents(): void;
     protected initBrush(): void;
     protected filterByKeyEvent(key: KeyEvent): () => boolean;
+    protected isD3EventKeyEqualOption(event: d3.D3ZoomEvent<any, any>, optionsKeyEvent: KeyEvent): boolean;
     protected initPan(): void;
     protected renderClipPath(): void;
     protected renderLegend(): void;

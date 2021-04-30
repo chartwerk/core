@@ -75,9 +75,11 @@ export declare type Options = {
         scroll: {
             zoom: {
                 isActive: boolean;
+                keyEvent?: KeyEvent;
             };
             pan: {
                 isActive: boolean;
+                keyEvent?: KeyEvent;
                 panStep?: number;
                 orientation?: ScrollPanOrientation;
             };
