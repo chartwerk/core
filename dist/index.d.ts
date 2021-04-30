@@ -39,7 +39,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected abstract onMouseOver(): void;
     protected abstract onMouseOut(): void;
     protected abstract onMouseMove(): void;
-    abstract renderSharedCrosshair(timestamp: number): void;
+    abstract renderSharedCrosshair(values: {
+        x?: number;
+        y?: number;
+    }): void;
     abstract hideSharedCrosshair(): void;
     protected initPodState(): void;
     protected renderSvg(): void;
@@ -57,7 +60,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderYLabel(): void;
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
-    protected onPanningZoom(): void;
+    protected onPanning(): void;
     protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;

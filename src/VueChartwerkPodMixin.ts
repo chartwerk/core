@@ -66,6 +66,9 @@ export default {
       if(has(this.$listeners, 'contextMenu')) {
         this.options.eventsCallbacks.contextMenu = this.contextMenu.bind(this);
       }
+      if(has(this.$listeners, 'sharedCrosshairMove')) {
+        this.options.eventsCallbacks.sharedCrosshairMove = this.sharedCrosshairMove.bind(this);
+      }
     },
     zoomIn(range) {
       this.$emit('zoomIn', range);
@@ -90,6 +93,9 @@ export default {
     },
     contextMenu(evt) {
       this.$emit('contextMenu', evt);
+    },
+    sharedCrosshairMove(event) {
+      this.$emit('sharedCrosshairMove', event);
     }
   }
 };

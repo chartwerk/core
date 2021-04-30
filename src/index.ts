@@ -204,7 +204,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected abstract onMouseOver(): void;
   protected abstract onMouseOut(): void;
   protected abstract onMouseMove(): void;
-  public abstract renderSharedCrosshair(timestamp: number): void;
+  public abstract renderSharedCrosshair(values: { x?: number, y?: number }): void;
   public abstract hideSharedCrosshair(): void;
 
   protected initPodState() {
@@ -444,7 +444,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     const panKeyEvent = this.options.zoomEvents.mouse.pan.keyEvent;
     const pan = this.d3.zoom()
       .filter(this.filterByKeyEvent(panKeyEvent))
-      .on('zoom', this.onPanningZoom.bind(this))
+      .on('zoom', this.onPanning.bind(this))
       .on('end', this.onPanningEnd.bind(this));
 
     this.chartContainer.call(pan);
@@ -548,7 +548,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  protected onPanningZoom(): void {
+  protected onPanning(): void {
     const event = this.d3.event;
     if(event.sourceEvent === null || event.sourceEvent === undefined) {
       return;
@@ -579,7 +579,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     // rescale metrics and axis on mouse and scroll panning
     const eventType = event.sourceEvent.type; // 'wheel' or 'mousemove'
-    // TODO: maybe use switch and move it to onPanningZoom
+    // TODO: maybe use switch and move it to onPanning
     if(eventType === 'wheel' && this.options.zoomEvents.scroll.pan.isActive === true) {
       this.onScrollPanningRescale(event);
       return;

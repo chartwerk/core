@@ -22,6 +22,7 @@ export type Options = {
     onLegendClick: (idx: number) => void,
     onLegendLabelClick: (idx: number) => void,
     contextMenu: (evt: any) => void, // the same name as in d3.events
+    sharedCrosshairMove: (event: any) => void
   };
   axis?: {
     x?: AxisOption,

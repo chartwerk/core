@@ -33,6 +33,7 @@ declare const _default: {
         panningEnd(range: any): void;
         panning(range: any): void;
         contextMenu(evt: any): void;
+        sharedCrosshairMove(event: any): void;
     };
 };
 export default _default;
