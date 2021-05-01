@@ -34,12 +34,11 @@ export default {
   methods: {
     // it's "abstract" method. "children" components should override it
     render() { },
+    renderSharedCrosshair(values: { x?: number, y?: number }) { },
+    hideSharedCrosshair() { },
     renderChart() {
       this.appendEvents();
       this.render();
-    },
-    renderSharedCrosshair(values: { x?: number, y?: number }) {
-      this.renderSharedCrosshair(values);
     },
     appendEvents() {
       if(this.options.eventsCallbacks === undefined) {

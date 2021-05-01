@@ -23,11 +23,12 @@ declare const _default: {
     mounted(): void;
     methods: {
         render(): void;
-        renderChart(): void;
         renderSharedCrosshair(values: {
             x?: number;
             y?: number;
         }): void;
+        hideSharedCrosshair(): void;
+        renderChart(): void;
         appendEvents(): void;
         zoomIn(range: any): void;
         zoomOut(centers: any): void;
