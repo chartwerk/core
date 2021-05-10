@@ -47,8 +47,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected initPodState(): void;
     protected renderSvg(): void;
     protected renderGrid(): void;
+    protected renderAxes(): void;
     protected renderXAxis(): void;
     protected renderYAxis(): void;
+    protected renderY1Axis(): void;
     protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string;
     protected renderCrosshair(): void;
     protected addEvents(): void;
@@ -82,13 +84,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     get y1MaxValue(): number;
     get minValueX(): number;
     get maxValueX(): number;
-    get axisBottomWithTicks(): d3.Axis<number | Date | {
-        valueOf(): number;
-    }>;
-    get ticksCount(): d3.TimeInterval | number;
     getd3TimeRangeEvery(count: number): d3.TimeInterval;
     get serieTimestampRange(): number | undefined;
-    get xAxisTicksFormat(): (d: any) => any;
+    getAxisTicksFormatter(axisOptions: AxisOption): (d: any) => any;
     get timeInterval(): number;
     get xTickTransform(): string;
     get extraMargin(): Margin;
