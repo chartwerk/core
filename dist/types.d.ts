@@ -96,7 +96,7 @@ export declare type AxisOption = {
     format: AxisFormat;
     range?: [number, number];
     invert?: boolean;
-    valueFormatter?: (value: number) => string;
+    valueFormatter?: (value: number, i: number) => string;
 };
 export declare type AxisRange = [number, number] | undefined;
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;

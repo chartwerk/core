@@ -319,17 +319,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       );
   }
 
-  protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string {
-    if(axisOptions.ticksCount === 0) {
-      return '';
-    }
-    // TODO: use Axis Formats for y axis
-    if(axisOptions === undefined || axisOptions.valueFormatter === undefined) {
-      return String(value);
-    }
-    return axisOptions.valueFormatter(value as number);
-  }
-
   protected renderCrosshair(): void {
     this.crosshair = this.chartContainer.append('g')
       .attr('id', 'crosshair-container')
@@ -1007,7 +996,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return (endTimestamp - startTimestamp) / 1000;
   }
 
-  getAxisTicksFormatter(axisOptions: AxisOption): (d: any) => any {
+  getAxisTicksFormatter(axisOptions: AxisOption): (d: any, i: number) => any {
     // TODO: ticksCount === 0 -> suspicious option
     if(axisOptions.ticksCount === 0) {
       return (d) => '';
@@ -1026,7 +1015,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           console.warn(`Value formatter for axis is not defined. Path options.axis.{?}.valueFormatter`);
           return (d) => d;
         }
-        return (d) => axisOptions.valueFormatter(d);
+        return (d, i) => axisOptions.valueFormatter(d, i);
       default:
         throw new Error(`Unknown time format for axis: ${axisOptions.format}`);
     }
