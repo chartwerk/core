@@ -91,6 +91,7 @@ export type AxisOption = {
   range?: [number, number];
   invert?: boolean;
   valueFormatter?: (value: number, i: number) => string;
+  colorFormatter?: (value: number, i: number) => string;
 }
 export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;

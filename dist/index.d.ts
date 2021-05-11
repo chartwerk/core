@@ -24,6 +24,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected yAxisTicksColors?: string[];
     private _clipPathUID;
     protected options: O;
     protected readonly d3: typeof d3;

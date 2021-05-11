@@ -128,6 +128,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected yAxisTicksColors?: string[] = [];
   private _clipPathUID = '';
   protected options: O;
   protected readonly d3: typeof d3;
@@ -289,6 +290,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return;
     }
     this.chartContainer.select('#y-axis-container').remove();
+    this.yAxisTicksColors = [];
     this.yAxisElement = this.chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
@@ -299,6 +301,13 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           .tickSize(DEFAULT_TICK_SIZE)
           .tickFormat(this.getAxisTicksFormatter(this.options.axis.y))
       );
+    const ticks = this.yAxisElement.selectAll(`.tick`).select('text').nodes();
+    this.yAxisTicksColors.map((color, index) => {
+      if(ticks === undefined || ticks[index] === undefined) {
+        return;
+      }
+      this.d3.select(ticks[index]).attr('color', color);
+    });
   }
 
   protected renderY1Axis(): void {
@@ -1015,7 +1024,12 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           console.warn(`Value formatter for axis is not defined. Path options.axis.{?}.valueFormatter`);
           return (d) => d;
         }
-        return (d, i) => axisOptions.valueFormatter(d, i);
+        return (d, i) => { 
+          if(axisOptions.colorFormatter !== undefined) {
+            this.yAxisTicksColors.push(axisOptions.colorFormatter(d, i))
+          }
+          return axisOptions.valueFormatter(d, i)
+        };
       default:
         throw new Error(`Unknown time format for axis: ${axisOptions.format}`);
     }
