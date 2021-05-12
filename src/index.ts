@@ -573,6 +573,19 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(event.sourceEvent === null || event.sourceEvent === undefined) {
       return;
     }
+    this.rescaleMetricAndAxis(event);
+
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
+      this.options.eventsCallbacks.panning({
+        ranges: [this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange],
+        d3Event: event
+      });
+    } else {
+      console.log('on panning, but there is no callback');
+    }
+  }
+
+  public rescaleMetricAndAxis(event: d3.D3ZoomEvent<any, any>): void {
     this.isPanning = true;
     this.onMouseOut();
 
@@ -588,19 +601,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // TODO: move metric-rect to core. Now it is in Pod
     this.chartContainer.selectAll('.metric-el')
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
-
-    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning({
-        ranges: [this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange],
-        d3Event: event
-      });
-    } else {
-      console.log('on panning, but there is no callback');
-    }
   }
 
-  // TODO: public is temporary
-  public onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+  protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     // rescale metrics and axis on mouse and scroll panning
     const eventType = event.sourceEvent.type; // 'wheel' or 'mousemove'
     const scrollPanOptions = this.options.zoomEvents.scroll.pan;

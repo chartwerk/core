@@ -37,7 +37,7 @@ export default {
     renderSharedCrosshair(values: { x?: number, y?: number }) { },
     hideSharedCrosshair() { },
     onPanningRescale(event) {
-      this.pod.onPanningRescale(event);
+      this.pod.rescaleMetricAndAxis(event);
     },
     renderChart() {
       this.appendEvents();
