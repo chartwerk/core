@@ -17,7 +17,10 @@ export declare type Options = {
     confidence?: number;
     eventsCallbacks?: {
         zoomIn: (range: AxisRange[]) => void;
-        panning: (range: AxisRange[]) => void;
+        panning: (event: {
+            ranges: AxisRange[];
+            d3Event: any;
+        }) => void;
         panningEnd: (range: AxisRange[]) => void;
         zoomOut: (centers: {
             x: number;

@@ -590,13 +590,17 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
 
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
+      this.options.eventsCallbacks.panning({
+        ranges: [this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange],
+        d3Event: event
+      });
     } else {
       console.log('on panning, but there is no callback');
     }
   }
 
-  protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+  // TODO: public is temporary
+  public onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     // rescale metrics and axis on mouse and scroll panning
     const eventType = event.sourceEvent.type; // 'wheel' or 'mousemove'
     const scrollPanOptions = this.options.zoomEvents.scroll.pan;

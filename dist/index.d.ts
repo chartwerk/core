@@ -64,7 +64,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
     protected onPanning(): void;
-    protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
+    onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
