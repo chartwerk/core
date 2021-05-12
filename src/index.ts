@@ -639,7 +639,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+  protected onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     const scrollPanOptions = this.options.zoomEvents.scroll.pan;
     // TODO: event.transform.y / x depends on mouse position, so we use hardcoded const, which should be removed
     const transformStep = scrollPanOptions.panStep;

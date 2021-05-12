@@ -65,7 +65,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderNoDataPointsMessage(): void;
     protected onPanning(): void;
     onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
-    onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
+    protected onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
     protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;
