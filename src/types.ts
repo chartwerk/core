@@ -54,24 +54,24 @@ export type Options = {
     to: number
   };
   zoomEvents?: {
-    mouse: {
-      zoom: { // same as brush
+    mouse?: {
+      zoom?: { // same as brush
         isActive: boolean;
-        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        keyEvent?: KeyEvent; // main(or base, or smth) / shift / alt / etc
         orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
       },
-      pan: {
+      pan?: {
         isActive: boolean;
-        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        keyEvent?: KeyEvent; // main(or base, or smth) / shift / alt / etc
         orientation?: PanOrientation;
       },
     },
-    scroll: {
-      zoom: {
+    scroll?: {
+      zoom?: {
         isActive: boolean;
         keyEvent?: KeyEvent;
       },
-      pan: {
+      pan?: {
         isActive: boolean;
         keyEvent?: KeyEvent;
         panStep?: number;

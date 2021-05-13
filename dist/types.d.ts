@@ -63,24 +63,24 @@ export declare type Options = {
         to: number;
     };
     zoomEvents?: {
-        mouse: {
-            zoom: {
+        mouse?: {
+            zoom?: {
                 isActive: boolean;
-                keyEvent: KeyEvent;
+                keyEvent?: KeyEvent;
                 orientation?: BrushOrientation;
             };
-            pan: {
+            pan?: {
                 isActive: boolean;
-                keyEvent: KeyEvent;
+                keyEvent?: KeyEvent;
                 orientation?: PanOrientation;
             };
         };
-        scroll: {
-            zoom: {
+        scroll?: {
+            zoom?: {
                 isActive: boolean;
                 keyEvent?: KeyEvent;
             };
-            pan: {
+            pan?: {
                 isActive: boolean;
                 keyEvent?: KeyEvent;
                 panStep?: number;
