@@ -87,7 +87,7 @@ export type Options = {
 export type AxisOption = {
   isActive?: boolean;
   ticksCount?: number;
-  format: AxisFormat;
+  format?: AxisFormat;
   range?: [number, number];
   invert?: boolean;
   valueFormatter?: (value: number, i: number) => string;
