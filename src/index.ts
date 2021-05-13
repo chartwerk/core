@@ -39,6 +39,7 @@ import replace from 'lodash/replace';
 import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
 import cloneDeep from 'lodash/cloneDeep';
+import debounce from 'lodash/debounce';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -157,6 +158,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.initPodState();
 
     this.d3Node = this.d3.select(this.el);
+    this.d3.select(window).on('resize', debounce(this.render.bind(this), 100));
   }
 
   public render(): void {
