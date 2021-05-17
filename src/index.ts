@@ -595,7 +595,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.isPanning = true;
     this.onMouseOut();
 
-    console.log('rescaleMetricAndAxis', event);
     this.onPanningRescale(event);
 
     const shouldClearState = false;
