@@ -5,7 +5,6 @@ import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected readonly el: HTMLElement;
-    protected series: T[];
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected customOverlay?: d3.Selection<SVGRectElement, unknown, null, undefined>;
@@ -26,12 +25,13 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected yAxisTicksColors?: string[];
     private _clipPathUID;
+    protected series: T[];
     protected options: O;
     protected readonly d3: typeof d3;
     private _xScale;
     private _yScale;
     private _y1Scale;
-    constructor(_d3: typeof d3, el: HTMLElement, series: T[], _options: O);
+    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
     render(): void;
     updateData(series?: T[], options?: O, shouldRerender?: boolean): void;
     protected updateOptions(newOptions: O): void;

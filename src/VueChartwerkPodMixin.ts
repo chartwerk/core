@@ -31,6 +31,9 @@ export default {
   mounted() {
     this.renderChart();
   },
+  destroyed() {
+    this.pod = undefined;
+  },
   methods: {
     // it's "abstract" method. "children" components should override it
     render() { },

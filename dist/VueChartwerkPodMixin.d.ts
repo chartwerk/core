@@ -21,6 +21,7 @@ declare const _default: {
         options(): void;
     };
     mounted(): void;
+    destroyed(): void;
     methods: {
         render(): void;
         renderSharedCrosshair(values: {

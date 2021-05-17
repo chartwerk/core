@@ -131,6 +131,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisTicksColors?: string[] = [];
   private _clipPathUID = '';
+  protected series: T[];
   protected options: O;
   protected readonly d3: typeof d3;
 
@@ -143,7 +144,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // maybe it's not the best idea
     _d3: typeof d3,
     protected readonly el: HTMLElement,
-    protected series: T[] = [],
+    _series: T[] = [],
     _options: O
   ) {
     // TODO: test if it's necessary
@@ -152,6 +153,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     let options = cloneDeep(_options);
     defaultsDeep(options, DEFAULT_OPTIONS);
     this.options = options;
+    this.series = cloneDeep(_series);
     this.d3 = _d3;
 
     // TODO: mb move it to render();
