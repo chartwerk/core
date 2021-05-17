@@ -1151,6 +1151,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       this.state.xValueRange = undefined;
       this.state.yValueRange = undefined;
       this.state.y1ValueRange = undefined;
+      this.state.transform = { x: 0, y: 0, k: 1 };
     }
   }
 
