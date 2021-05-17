@@ -667,7 +667,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.transform = { x: translateX };
         break;
       case ScrollPanOrientation.VERTICAL:
-        const deltaY = Math.min(Math.abs(event.sourceEvent.deltaY), DEFAULT_SCROLL_PAN_STEP);
+        const deltaY = Math.min(Math.abs(event.sourceEvent.deltaY), this.height * 0.1);
         // @ts-ignore
         let signY = Math.sign(event.transform.y);
         if(this.options.axis.y.invert === true) {
