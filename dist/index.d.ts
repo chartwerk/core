@@ -28,6 +28,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected series: T[];
     protected options: O;
     protected readonly d3: typeof d3;
+    protected deltaYTransform: number;
     private _xScale;
     private _yScale;
     private _y1Scale;

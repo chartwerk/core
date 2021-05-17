@@ -134,6 +134,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected series: T[];
   protected options: O;
   protected readonly d3: typeof d3;
+  protected deltaYTransform = 0;
 
   // TODO: test variables instead of functions with cache
   private _xScale: d3.ScaleLinear<number, number> | null = null;
@@ -594,6 +595,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.isPanning = true;
     this.onMouseOut();
 
+    console.log('rescaleMetricAndAxis', event);
     this.onPanningRescale(event);
 
     const shouldClearState = false;
@@ -666,15 +668,21 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.transform = { x: translateX };
         break;
       case ScrollPanOrientation.VERTICAL:
+        const deltaY = Math.min(Math.abs(event.sourceEvent.deltaY), DEFAULT_SCROLL_PAN_STEP);
         // @ts-ignore
         let signY = Math.sign(event.transform.y);
         if(this.options.axis.y.invert === true) {
           signY = -signY;
         }
         let rangeY = this.state.yValueRange || [this.maxValue, this.minValue];
-        const transformY = this.absYScale.invert(Math.abs(transformStep));
+        const transformY = this.absYScale.invert(deltaY);
+        this.deltaYTransform = this.deltaYTransform + deltaY;
+        // TODO: not hardcoded bounds
+        if(this.deltaYTransform > this.height * 0.9) {
+          return;
+        }
         this.state.yValueRange = [rangeY[0] - signY * transformY, rangeY[1] - signY * transformY];
-        const translateY = this.state.transform.y + signY * transformStep;
+        const translateY = this.state.transform.y + signY * deltaY;
         this.state.transform = { y: translateY };
         // TODO: add y1 rescale
         break;
@@ -685,6 +693,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onPanningEnd(): void {
     this.isPanning = false;
+    this.deltaYTransform = 0;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
       this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
