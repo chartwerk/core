@@ -160,6 +160,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.initPodState();
 
     this.d3Node = this.d3.select(this.el);
+    // TODO: remove event listener
     window.addEventListener('resize', debounce(this.render.bind(this), 100));
   }
 
