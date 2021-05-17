@@ -53,8 +53,8 @@ export class PodState {
   }
 
   set transform(transform: { x?: number, y?: number, k?: number }) {
-    this._transform.x = transform.x || this._transform.x;
-    this._transform.y = transform.y || this._transform.y;
-    this._transform.k = transform.k || this._transform.k;
+    this._transform.x = transform.x !== undefined ? transform.x : this._transform.x;
+    this._transform.y = transform.y !== undefined ? transform.y : this._transform.y;
+    this._transform.k = transform.k !== undefined ? transform.k : this._transform.k;
   }
 }
