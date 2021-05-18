@@ -5,7 +5,6 @@ import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected readonly el: HTMLElement;
-    protected series: T[];
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected customOverlay?: d3.Selection<SVGRectElement, unknown, null, undefined>;
@@ -24,13 +23,16 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+    protected yAxisTicksColors?: string[];
     private _clipPathUID;
+    protected series: T[];
     protected options: O;
     protected readonly d3: typeof d3;
+    protected deltaYTransform: number;
     private _xScale;
     private _yScale;
     private _y1Scale;
-    constructor(_d3: typeof d3, el: HTMLElement, series: T[], _options: O);
+    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
     render(): void;
     updateData(series?: T[], options?: O, shouldRerender?: boolean): void;
     protected updateOptions(newOptions: O): void;
@@ -47,9 +49,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected initPodState(): void;
     protected renderSvg(): void;
     protected renderGrid(): void;
+    protected renderAxes(): void;
     protected renderXAxis(): void;
     protected renderYAxis(): void;
-    protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string;
+    protected renderY1Axis(): void;
     protected renderCrosshair(): void;
     protected addEvents(): void;
     protected initBrush(): void;
@@ -62,8 +65,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderXLabel(): void;
     protected renderNoDataPointsMessage(): void;
     protected onPanning(): void;
+    rescaleMetricAndAxis(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
-    onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
+    protected onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
     protected onBrush(): void;
     protected getSelectionAttrs(selection: number[][]): SvgElementAttributes | undefined;
@@ -82,13 +86,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     get y1MaxValue(): number;
     get minValueX(): number;
     get maxValueX(): number;
-    get axisBottomWithTicks(): d3.Axis<number | Date | {
-        valueOf(): number;
-    }>;
-    get ticksCount(): d3.TimeInterval | number;
     getd3TimeRangeEvery(count: number): d3.TimeInterval;
     get serieTimestampRange(): number | undefined;
-    get xAxisTicksFormat(): (d: any) => any;
+    getAxisTicksFormatter(axisOptions: AxisOption): (d: any, i: number) => any;
     get timeInterval(): number;
     get xTickTransform(): string;
     get extraMargin(): Margin;
@@ -105,4 +105,4 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat, yAxisOrientation, CrosshairOrientation, ScrollPanOrientation, palette };
+export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation, AxisFormat, yAxisOrientation, CrosshairOrientation, ScrollPanOrientation, KeyEvent, palette };

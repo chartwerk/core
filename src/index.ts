@@ -39,10 +39,12 @@ import replace from 'lodash/replace';
 import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
 import cloneDeep from 'lodash/cloneDeep';
+import debounce from 'lodash/debounce';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
 const DEFAULT_TICK_COUNT = 4;
+const DEFAULT_TICK_SIZE = 2;
 const MILISECONDS_IN_MINUTE = 60 * 1000;
 const DEFAULT_AXIS_RANGE = [0, 1];
 const DEFAULT_SCROLL_PAN_STEP = 50;
@@ -127,9 +129,12 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected xAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected yAxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected y1AxisElement?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected yAxisTicksColors?: string[] = [];
   private _clipPathUID = '';
+  protected series: T[];
   protected options: O;
   protected readonly d3: typeof d3;
+  protected deltaYTransform = 0;
 
   // TODO: test variables instead of functions with cache
   private _xScale: d3.ScaleLinear<number, number> | null = null;
@@ -140,7 +145,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // maybe it's not the best idea
     _d3: typeof d3,
     protected readonly el: HTMLElement,
-    protected series: T[] = [],
+    _series: T[] = [],
     _options: O
   ) {
     // TODO: test if it's necessary
@@ -149,20 +154,22 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     let options = cloneDeep(_options);
     defaultsDeep(options, DEFAULT_OPTIONS);
     this.options = options;
+    this.series = cloneDeep(_series);
     this.d3 = _d3;
 
     // TODO: mb move it to render();
     this.initPodState();
 
     this.d3Node = this.d3.select(this.el);
+    // TODO: remove event listener
+    window.addEventListener('resize', debounce(this.render.bind(this), 100));
   }
 
   public render(): void {
     this.clearScaleCache();
 
     this.renderSvg();
-    this.renderXAxis();
-    this.renderYAxis();
+    this.renderAxes();
     this.renderGrid();
 
     this.renderClipPath();
@@ -236,7 +243,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
       .call(
-        this.axisBottomWithTicks
+        this.d3.axisBottom(this.xScale)
+          .ticks(this.options.axis.x.ticksCount)
           .tickSize(-this.height)
           .tickFormat(() => '')
       );
@@ -257,6 +265,13 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .style('pointer-events', 'none');
   }
 
+  protected renderAxes(): void {
+    // TODO: remove duplicates
+    this.renderXAxis();
+    this.renderYAxis();
+    this.renderY1Axis();
+  }
+
   protected renderXAxis(): void {
     if(this.options.axis.x.isActive === false) {
       return;
@@ -267,54 +282,56 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
       .call(
-        this.axisBottomWithTicks
-          .tickSize(2)
-          .tickFormat(this.xAxisTicksFormat)
+        this.d3.axisBottom(this.xScale)
+          .ticks(this.options.axis.x.ticksCount)
+          .tickSize(DEFAULT_TICK_SIZE)
+          .tickFormat(this.getAxisTicksFormatter(this.options.axis.x))
       );
     this.chartContainer.select('#x-axis-container').selectAll('.tick').selectAll('text')
       .style('transform', this.xTickTransform);
   }
 
   protected renderYAxis(): void {
-    if(this.options.axis.y.isActive === true) {
-      this.chartContainer.select('#y-axis-container').remove();
-      this.yAxisElement = this.chartContainer
-        .append('g')
-        .attr('id', 'y-axis-container')
-        // TODO: number of ticks shouldn't be hardcoded
-        .call(
-          this.d3.axisLeft(this.yScale)
-            .ticks(this.options.axis.y.ticksCount)
-            .tickSize(2)
-            .tickFormat(value => this.formatAxisTicks(this.options.axis.y, value))
-        );
+    if(this.options.axis.y.isActive === false) {
+      return;
     }
-
-    if(this.options.axis.y1.isActive === true) {
-      this.chartContainer.select('#y1-axis-container').remove();
-      this.y1AxisElement = this.chartContainer
-        .append('g')
-        .attr('id', 'y1-axis-container')
-        .attr('transform', `translate(${this.width},0)`)
-        // TODO: number of ticks shouldn't be hardcoded
-        .call(
-          this.d3.axisRight(this.y1Scale)
-            .ticks(DEFAULT_TICK_COUNT)
-            .tickSize(2)
-            .tickFormat(value => this.formatAxisTicks(this.options.axis.y1, value))
-        );
-    }
+    this.chartContainer.select('#y-axis-container').remove();
+    this.yAxisTicksColors = [];
+    this.yAxisElement = this.chartContainer
+      .append('g')
+      .attr('id', 'y-axis-container')
+      // TODO: number of ticks shouldn't be hardcoded
+      .call(
+        this.d3.axisLeft(this.yScale)
+          .ticks(this.options.axis.y.ticksCount)
+          .tickSize(DEFAULT_TICK_SIZE)
+          .tickFormat(this.getAxisTicksFormatter(this.options.axis.y))
+      );
+    const ticks = this.yAxisElement.selectAll(`.tick`).select('text').nodes();
+    this.yAxisTicksColors.map((color, index) => {
+      if(ticks === undefined || ticks[index] === undefined) {
+        return;
+      }
+      this.d3.select(ticks[index]).attr('color', color);
+    });
   }
 
-  protected formatAxisTicks(axisOptions: AxisOption, value: d3.NumberValue): string {
-    if(axisOptions.ticksCount === 0) {
-      return '';
+  protected renderY1Axis(): void {
+    if(this.options.axis.y1.isActive === false) {
+      return;
     }
-    // TODO: use Axis Formats for y axis
-    if(axisOptions === undefined || axisOptions.valueFormatter === undefined) {
-      return String(value);
-    }
-    return axisOptions.valueFormatter(value as number);
+    this.chartContainer.select('#y1-axis-container').remove();
+    this.y1AxisElement = this.chartContainer
+      .append('g')
+      .attr('id', 'y1-axis-container')
+      .attr('transform', `translate(${this.width},0)`)
+      // TODO: number of ticks shouldn't be hardcoded
+      .call(
+        this.d3.axisRight(this.y1Scale)
+          .ticks(DEFAULT_TICK_COUNT)
+          .tickSize(DEFAULT_TICK_SIZE)
+          .tickFormat(this.getAxisTicksFormatter(this.options.axis.y1))
+      );
   }
 
   protected renderCrosshair(): void {
@@ -562,6 +579,19 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(event.sourceEvent === null || event.sourceEvent === undefined) {
       return;
     }
+    this.rescaleMetricAndAxis(event);
+
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
+      this.options.eventsCallbacks.panning({
+        ranges: [this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange],
+        d3Event: event
+      });
+    } else {
+      console.log('on panning, but there is no callback');
+    }
+  }
+
+  public rescaleMetricAndAxis(event: d3.D3ZoomEvent<any, any>): void {
     this.isPanning = true;
     this.onMouseOut();
 
@@ -577,12 +607,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // TODO: move metric-rect to core. Now it is in Pod
     this.chartContainer.selectAll('.metric-el')
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
-
-    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panning !== undefined) {
-      this.options.eventsCallbacks.panning([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
-    } else {
-      console.log('on panning, but there is no callback');
-    }
   }
 
   protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
@@ -624,7 +648,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
+  protected onScrollPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
     const scrollPanOptions = this.options.zoomEvents.scroll.pan;
     // TODO: event.transform.y / x depends on mouse position, so we use hardcoded const, which should be removed
     const transformStep = scrollPanOptions.panStep;
@@ -643,15 +667,21 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.transform = { x: translateX };
         break;
       case ScrollPanOrientation.VERTICAL:
+        const deltaY = Math.min(Math.abs(event.sourceEvent.deltaY), this.height * 0.1);
         // @ts-ignore
         let signY = Math.sign(event.transform.y);
         if(this.options.axis.y.invert === true) {
           signY = -signY;
         }
         let rangeY = this.state.yValueRange || [this.maxValue, this.minValue];
-        const transformY = this.absYScale.invert(Math.abs(transformStep));
+        const transformY = this.absYScale.invert(deltaY);
+        this.deltaYTransform = this.deltaYTransform + deltaY;
+        // TODO: not hardcoded bounds
+        if(this.deltaYTransform > this.height * 0.9) {
+          return;
+        }
         this.state.yValueRange = [rangeY[0] - signY * transformY, rangeY[1] - signY * transformY];
-        const translateY = this.state.transform.y + signY * transformStep;
+        const translateY = this.state.transform.y + signY * deltaY;
         this.state.transform = { y: translateY };
         // TODO: add y1 rescale
         break;
@@ -662,6 +692,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   protected onPanningEnd(): void {
     this.isPanning = false;
+    this.deltaYTransform = 0;
     this.onMouseOut();
     if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
       this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange, this.state.y1ValueRange]);
@@ -963,35 +994,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return maxValue;
   }
 
-  get axisBottomWithTicks(): d3.Axis<number | Date | { valueOf(): number }> {
-    // TODO: find a better way
-    if(this.options.renderTicksfromTimestamps === true) {
-      return this.d3.axisBottom(this.xScale)
-        .tickValues(this.series[0].datapoints.map(d => new Date(d[1])));
-    }
-    return this.d3.axisBottom(this.xScale).ticks(this.ticksCount);
-  }
-
-  get ticksCount(): d3.TimeInterval | number {
-    if(this.options.timeInterval === undefined || this.options.timeInterval.count === undefined) {
-      return 5;
-    }
-    // TODO: add max ticks limit
-    switch(this.options.axis.x.format) {
-      case AxisFormat.TIME:
-        return this.getd3TimeRangeEvery(this.options.timeInterval.count);;
-      case AxisFormat.NUMERIC:
-        // TODO: find a better way
-        return this.options.timeInterval.count;
-      case AxisFormat.STRING:
-        // TODO: add string/symbol format
-      case AxisFormat.CUSTOM:
-        return this.options.timeInterval.count;
-      default:
-        throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
-    }
-  }
-
   getd3TimeRangeEvery(count: number): d3.TimeInterval {
     if(this.options.timeInterval === undefined || this.options.timeInterval.timeFormat === undefined) {
       return this.d3.timeMinute.every(count);
@@ -1023,28 +1025,33 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return (endTimestamp - startTimestamp) / 1000;
   }
 
-  get xAxisTicksFormat() {
-    if(this.options.axis.x.ticksCount === 0) {
+  getAxisTicksFormatter(axisOptions: AxisOption): (d: any, i: number) => any {
+    // TODO: ticksCount === 0 -> suspicious option
+    if(axisOptions.ticksCount === 0) {
       return (d) => '';
     }
-    switch(this.options.axis.x.format) {
+    switch(axisOptions.format) {
       case AxisFormat.TIME:
-        if(this.options.tickFormat !== undefined && this.options.tickFormat.xAxis !== undefined) {
-          return this.d3.timeFormat(this.options.tickFormat.xAxis);
-        }
+        // TODO: customize time format?
         return this.d3.timeFormat('%m/%d %H:%M');
       case AxisFormat.NUMERIC:
         return (d) => d;
       case AxisFormat.STRING:
         // TODO: add string/symbol format
+        throw new Error(`Not supported AxisFormat type ${axisOptions.format} yet`);
       case AxisFormat.CUSTOM:
-        if(this.options.axis.x.valueFormatter === undefined) {
-          console.warn(`Value formatter for y axis is not defined. Path options.axis.x.valueFormatter`);
+        if(axisOptions.valueFormatter === undefined) {
+          console.warn(`Value formatter for axis is not defined. Path options.axis.{?}.valueFormatter`);
           return (d) => d;
         }
-        return this.options.axis.x.valueFormatter;
+        return (d, i) => { 
+          if(axisOptions.colorFormatter !== undefined) {
+            this.yAxisTicksColors.push(axisOptions.colorFormatter(d, i))
+          }
+          return axisOptions.valueFormatter(d, i)
+        };
       default:
-        throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
+        throw new Error(`Unknown time format for axis: ${axisOptions.format}`);
     }
   }
 
@@ -1144,6 +1151,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       this.state.xValueRange = undefined;
       this.state.yValueRange = undefined;
       this.state.y1ValueRange = undefined;
+      this.state.transform = { x: 0, y: 0, k: 1 };
     }
   }
 
@@ -1204,6 +1212,6 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 export {
   ChartwerkPod, VueChartwerkPodMixin,
   Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, PanOrientation,
-  AxisFormat, yAxisOrientation, CrosshairOrientation, ScrollPanOrientation,
+  AxisFormat, yAxisOrientation, CrosshairOrientation, ScrollPanOrientation, KeyEvent,
   palette
 };

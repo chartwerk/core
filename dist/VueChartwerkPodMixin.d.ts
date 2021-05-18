@@ -21,8 +21,15 @@ declare const _default: {
         options(): void;
     };
     mounted(): void;
+    destroyed(): void;
     methods: {
         render(): void;
+        renderSharedCrosshair(values: {
+            x?: number;
+            y?: number;
+        }): void;
+        hideSharedCrosshair(): void;
+        onPanningRescale(event: any): void;
         renderChart(): void;
         appendEvents(): void;
         zoomIn(range: any): void;

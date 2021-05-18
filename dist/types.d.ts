@@ -17,7 +17,10 @@ export declare type Options = {
     confidence?: number;
     eventsCallbacks?: {
         zoomIn: (range: AxisRange[]) => void;
-        panning: (range: AxisRange[]) => void;
+        panning: (event: {
+            ranges: AxisRange[];
+            d3Event: any;
+        }) => void;
         panningEnd: (range: AxisRange[]) => void;
         zoomOut: (centers: {
             x: number;
@@ -60,24 +63,24 @@ export declare type Options = {
         to: number;
     };
     zoomEvents?: {
-        mouse: {
-            zoom: {
+        mouse?: {
+            zoom?: {
                 isActive: boolean;
-                keyEvent: KeyEvent;
+                keyEvent?: KeyEvent;
                 orientation?: BrushOrientation;
             };
-            pan: {
+            pan?: {
                 isActive: boolean;
-                keyEvent: KeyEvent;
+                keyEvent?: KeyEvent;
                 orientation?: PanOrientation;
             };
         };
-        scroll: {
-            zoom: {
+        scroll?: {
+            zoom?: {
                 isActive: boolean;
                 keyEvent?: KeyEvent;
             };
-            pan: {
+            pan?: {
                 isActive: boolean;
                 keyEvent?: KeyEvent;
                 panStep?: number;
@@ -93,10 +96,11 @@ export declare type Options = {
 export declare type AxisOption = {
     isActive?: boolean;
     ticksCount?: number;
-    format: AxisFormat;
+    format?: AxisFormat;
     range?: [number, number];
     invert?: boolean;
-    valueFormatter?: (value: number) => string;
+    valueFormatter?: (value: number, i: number) => string;
+    colorFormatter?: (value: number, i: number) => string;
 };
 export declare type AxisRange = [number, number] | undefined;
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;

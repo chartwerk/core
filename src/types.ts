@@ -14,7 +14,7 @@ export type Options = {
   confidence?: number;
   eventsCallbacks?: {
     zoomIn: (range: AxisRange[]) => void,
-    panning: (range: AxisRange[]) => void,
+    panning: (event: { ranges: AxisRange[], d3Event: any }) => void,
     panningEnd: (range: AxisRange[]) => void,
     zoomOut: (centers: {x: number, y: number}) => void,
     mouseMove: (evt: any) => void,
@@ -54,24 +54,24 @@ export type Options = {
     to: number
   };
   zoomEvents?: {
-    mouse: {
-      zoom: { // same as brush
+    mouse?: {
+      zoom?: { // same as brush
         isActive: boolean;
-        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        keyEvent?: KeyEvent; // main(or base, or smth) / shift / alt / etc
         orientation?: BrushOrientation; // to BrushOrientation: vertical, horizaontal, square, rectange
       },
-      pan: {
+      pan?: {
         isActive: boolean;
-        keyEvent: KeyEvent; // main(or base, or smth) / shift / alt / etc
+        keyEvent?: KeyEvent; // main(or base, or smth) / shift / alt / etc
         orientation?: PanOrientation;
       },
     },
-    scroll: {
-      zoom: {
+    scroll?: {
+      zoom?: {
         isActive: boolean;
         keyEvent?: KeyEvent;
       },
-      pan: {
+      pan?: {
         isActive: boolean;
         keyEvent?: KeyEvent;
         panStep?: number;
@@ -87,10 +87,11 @@ export type Options = {
 export type AxisOption = {
   isActive?: boolean;
   ticksCount?: number;
-  format: AxisFormat;
+  format?: AxisFormat;
   range?: [number, number];
   invert?: boolean;
-  valueFormatter?: (value: number) => string;
+  valueFormatter?: (value: number, i: number) => string;
+  colorFormatter?: (value: number, i: number) => string;
 }
 export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;

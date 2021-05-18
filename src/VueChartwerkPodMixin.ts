@@ -31,9 +31,17 @@ export default {
   mounted() {
     this.renderChart();
   },
+  destroyed() {
+    this.pod = undefined;
+  },
   methods: {
     // it's "abstract" method. "children" components should override it
     render() { },
+    renderSharedCrosshair(values: { x?: number, y?: number }) { },
+    hideSharedCrosshair() { },
+    onPanningRescale(event) {
+      this.pod.rescaleMetricAndAxis(event);
+    },
     renderChart() {
       this.appendEvents();
       this.render();
