@@ -135,6 +135,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected options: O;
   protected readonly d3: typeof d3;
   protected deltaYTransform = 0;
+  protected debouncedRender = debounce(this.render.bind(this), 100);
 
   // TODO: test variables instead of functions with cache
   private _xScale: d3.ScaleLinear<number, number> | null = null;
@@ -161,8 +162,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.initPodState();
 
     this.d3Node = this.d3.select(this.el);
-    // TODO: remove event listener
-    window.addEventListener('resize', debounce(this.render.bind(this), 100));
+    this.addEventListeners();
+  }
+
+  protected addEventListeners(): void {
+    window.addEventListener('resize', this.debouncedRender);
+  }
+
+  protected removeEventListeners(): void {
+    window.removeEventListener('resize', this.debouncedRender);
   }
 
   public render(): void {

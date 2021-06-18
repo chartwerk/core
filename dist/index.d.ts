@@ -1,3 +1,4 @@
+/// <reference types="lodash" />
 import VueChartwerkPodMixin from './VueChartwerkPodMixin';
 import { PodState } from './state';
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, BrushOrientation, AxisFormat, CrosshairOrientation, SvgElementAttributes, KeyEvent, PanOrientation, yAxisOrientation, ScrollPanOrientation, AxisOption } from './types';
@@ -29,10 +30,13 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected options: O;
     protected readonly d3: typeof d3;
     protected deltaYTransform: number;
+    protected debouncedRender: import("lodash").DebouncedFunc<any>;
     private _xScale;
     private _yScale;
     private _y1Scale;
     constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
+    protected addEventListeners(): void;
+    protected removeEventListeners(): void;
     render(): void;
     updateData(series?: T[], options?: O, shouldRerender?: boolean): void;
     protected updateOptions(newOptions: O): void;
