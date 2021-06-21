@@ -32,6 +32,7 @@ export default {
     this.renderChart();
   },
   destroyed() {
+    this.pod.removeEventListeners();
     this.pod = undefined;
   },
   methods: {
