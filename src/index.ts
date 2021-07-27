@@ -261,7 +261,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('class', 'grid')
       .call(
-        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale)
+          .ticks(this.options.axis.y.ticksCount)
           .tickSize(-this.width)
           .tickFormat(() => '')
       );
