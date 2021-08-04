@@ -250,6 +250,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
+      .style('pointer-events', 'none')
       .call(
         this.d3.axisBottom(this.xScale)
           .ticks(this.options.axis.x.ticksCount)
@@ -260,6 +261,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.chartContainer
       .append('g')
       .attr('class', 'grid')
+      .style('pointer-events', 'none')
       .call(
         this.d3.axisLeft(this.yScale)
           .ticks(this.options.axis.y.ticksCount)
@@ -290,6 +292,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
+      .style('pointer-events', 'none')
       .call(
         this.d3.axisBottom(this.xScale)
           .ticks(this.options.axis.x.ticksCount)
@@ -611,10 +614,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderYAxis();
     this.renderXAxis();
 
+    // metrics-rect wrapper is required for panning
     this.chartContainer.select('.metrics-rect')
-      .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
-    // TODO: move metric-rect to core. Now it is in Pod
-    this.chartContainer.selectAll('.metric-el')
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
   }
 
