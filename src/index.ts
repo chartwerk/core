@@ -312,6 +312,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.yAxisElement = this.chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
+      .style('pointer-events', 'none')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
         this.d3.axisLeft(this.yScale)
@@ -337,6 +338,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('id', 'y1-axis-container')
       .attr('transform', `translate(${this.width},0)`)
+      .style('pointer-events', 'none')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
         this.d3.axisRight(this.y1Scale)
