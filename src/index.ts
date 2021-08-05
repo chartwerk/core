@@ -100,14 +100,22 @@ const DEFAULT_OPTIONS: Options = {
       format: AxisFormat.NUMERIC
     }
   },
+  grid: {
+    x: {
+      isActive: true,
+      ticksCount: 5,
+    },
+    y: {
+      isActive: true,
+      ticksCount: 5,
+    },
+  },
   crosshair: {
     orientation: CrosshairOrientation.VERTICAL,
     color: 'red'
   },
   renderTicksfromTimestamps: false,
-  renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true
 }
 
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -241,33 +249,34 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderGrid(): void {
-    if(this.options.renderGrid === false) {
-      return;
-    }
     this.chartContainer.selectAll('.grid').remove();
 
-    this.chartContainer
-      .append('g')
-      .attr('transform', `translate(0,${this.height})`)
-      .attr('class', 'grid')
-      .style('pointer-events', 'none')
-      .call(
-        this.d3.axisBottom(this.xScale)
-          .ticks(this.options.axis.x.ticksCount)
-          .tickSize(-this.height)
-          .tickFormat(() => '')
-      );
+    if(this.options.grid.x.isActive) {
+      this.chartContainer
+        .append('g')
+        .attr('transform', `translate(0,${this.height})`)
+        .attr('class', 'grid')
+        .style('pointer-events', 'none')
+        .call(
+          this.d3.axisBottom(this.xScale)
+            .ticks(this.options.grid.x.ticksCount)
+            .tickSize(-this.height)
+            .tickFormat(() => '')
+        );
+    }
 
-    this.chartContainer
-      .append('g')
-      .attr('class', 'grid')
-      .style('pointer-events', 'none')
-      .call(
-        this.d3.axisLeft(this.yScale)
-          .ticks(this.options.axis.y.ticksCount)
-          .tickSize(-this.width)
-          .tickFormat(() => '')
-      );
+    if(this.options.grid.y.isActive) {
+      this.chartContainer
+        .append('g')
+        .attr('class', 'grid')
+        .style('pointer-events', 'none')
+        .call(
+          this.d3.axisLeft(this.yScale)
+            .ticks(this.options.grid.y.ticksCount)
+            .tickSize(-this.width)
+            .tickFormat(() => '')
+        );
+    }
 
     this.chartContainer.selectAll('.grid').selectAll('.tick')
       .attr('opacity', '0.5');

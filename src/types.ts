@@ -29,6 +29,16 @@ export type Options = {
     y?: AxisOption,
     y1?: AxisOption
   };
+  grid?: {
+    x?: {
+      isActive?: boolean;
+      ticksCount?: number;
+    },
+    y?: {
+      isActive?: boolean;
+      ticksCount?: number;
+    },
+  };
   crosshair?: {
     orientation?: CrosshairOrientation;
     color?: string;
@@ -80,9 +90,7 @@ export type Options = {
     },
   }
   renderTicksfromTimestamps?: boolean;
-  renderGrid?: boolean;
   renderLegend?: boolean;
-  renderCrosshair?: boolean;
 };
 export type AxisOption = {
   isActive?: boolean;
