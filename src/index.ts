@@ -255,7 +255,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       this.chartContainer
         .append('g')
         .attr('transform', `translate(0,${this.height})`)
-        .attr('class', 'grid')
+        .attr('class', 'grid x-grid')
         .style('pointer-events', 'none')
         .call(
           this.d3.axisBottom(this.xScale)
@@ -268,7 +268,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.grid.y.isActive) {
       this.chartContainer
         .append('g')
-        .attr('class', 'grid')
+        .attr('class', 'grid y-grid')
         .style('pointer-events', 'none')
         .call(
           this.d3.axisLeft(this.yScale)
