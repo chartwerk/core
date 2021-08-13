@@ -32,6 +32,7 @@ export declare type Options = {
         onLegendLabelClick: (idx: number) => void;
         contextMenu: (evt: any) => void;
         sharedCrosshairMove: (event: any) => void;
+        renderEnd: () => void;
     };
     axis?: {
         x?: AxisOption;

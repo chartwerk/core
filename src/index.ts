@@ -40,6 +40,7 @@ import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
+import has from 'lodash/has';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -197,6 +198,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderLegend();
     this.renderYLabel();
     this.renderXLabel();
+
+    if(has(this.options.eventsCallbacks, 'renderEnd')) {
+      this.options.eventsCallbacks.renderEnd();
+    }
   }
 
   public updateData(series?: T[], options?: O, shouldRerender = true): void {
