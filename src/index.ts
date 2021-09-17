@@ -649,6 +649,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       if(scrollZoomOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollZoomOptions.keyEvent)) {
         this.state.transform = { k: event.transform.k };
       }
+    } else {
+      const isPanActive = this.options.zoomEvents.mouse.pan.isActive;
+      if(!isPanActive) {
+        return;
+      }
     }
 
     const panOrientation = this.options.zoomEvents.mouse.pan.orientation;
