@@ -633,6 +633,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // metrics-rect wrapper is required for panning
     this.chartContainer.select('.metrics-rect')
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
+    // TODO: use one standard for all metrics in Pods
+    this.chartContainer.selectAll('.metric-el')
+      .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
   }
 
   protected onPanningRescale(event: d3.D3ZoomEvent<any, any>): void {
