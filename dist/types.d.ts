@@ -32,11 +32,22 @@ export declare type Options = {
         onLegendLabelClick: (idx: number) => void;
         contextMenu: (evt: any) => void;
         sharedCrosshairMove: (event: any) => void;
+        renderEnd: () => void;
     };
     axis?: {
         x?: AxisOption;
         y?: AxisOption;
         y1?: AxisOption;
+    };
+    grid?: {
+        x?: {
+            isActive?: boolean;
+            ticksCount?: number;
+        };
+        y?: {
+            isActive?: boolean;
+            ticksCount?: number;
+        };
     };
     crosshair?: {
         orientation?: CrosshairOrientation;
@@ -89,9 +100,7 @@ export declare type Options = {
         };
     };
     renderTicksfromTimestamps?: boolean;
-    renderGrid?: boolean;
     renderLegend?: boolean;
-    renderCrosshair?: boolean;
 };
 export declare type AxisOption = {
     isActive?: boolean;

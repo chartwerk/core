@@ -40,6 +40,7 @@ import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
+import has from 'lodash/has';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -100,14 +101,22 @@ const DEFAULT_OPTIONS: Options = {
       format: AxisFormat.NUMERIC
     }
   },
+  grid: {
+    x: {
+      isActive: true,
+      ticksCount: 5,
+    },
+    y: {
+      isActive: true,
+      ticksCount: 5,
+    },
+  },
   crosshair: {
     orientation: CrosshairOrientation.VERTICAL,
     color: 'red'
   },
   renderTicksfromTimestamps: false,
-  renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true
 }
 
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -189,6 +198,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderLegend();
     this.renderYLabel();
     this.renderXLabel();
+
+    if(has(this.options.eventsCallbacks, 'renderEnd')) {
+      this.options.eventsCallbacks.renderEnd();
+    }
   }
 
   public updateData(series?: T[], options?: O, shouldRerender = true): void {
@@ -241,30 +254,34 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderGrid(): void {
-    if(this.options.renderGrid === false) {
-      return;
-    }
     this.chartContainer.selectAll('.grid').remove();
 
-    this.chartContainer
-      .append('g')
-      .attr('transform', `translate(0,${this.height})`)
-      .attr('class', 'grid')
-      .call(
-        this.d3.axisBottom(this.xScale)
-          .ticks(this.options.axis.x.ticksCount)
-          .tickSize(-this.height)
-          .tickFormat(() => '')
-      );
+    if(this.options.grid.x.isActive) {
+      this.chartContainer
+        .append('g')
+        .attr('transform', `translate(0,${this.height})`)
+        .attr('class', 'grid x-grid')
+        .style('pointer-events', 'none')
+        .call(
+          this.d3.axisBottom(this.xScale)
+            .ticks(this.options.grid.x.ticksCount)
+            .tickSize(-this.height)
+            .tickFormat(() => '')
+        );
+    }
 
-    this.chartContainer
-      .append('g')
-      .attr('class', 'grid')
-      .call(
-        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
-          .tickSize(-this.width)
-          .tickFormat(() => '')
-      );
+    if(this.options.grid.y.isActive) {
+      this.chartContainer
+        .append('g')
+        .attr('class', 'grid y-grid')
+        .style('pointer-events', 'none')
+        .call(
+          this.d3.axisLeft(this.yScale)
+            .ticks(this.options.grid.y.ticksCount)
+            .tickSize(-this.width)
+            .tickFormat(() => '')
+        );
+    }
 
     this.chartContainer.selectAll('.grid').selectAll('.tick')
       .attr('opacity', '0.5');
@@ -289,6 +306,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
+      .style('pointer-events', 'none')
       .call(
         this.d3.axisBottom(this.xScale)
           .ticks(this.options.axis.x.ticksCount)
@@ -308,6 +326,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.yAxisElement = this.chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
+      .style('pointer-events', 'none')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
         this.d3.axisLeft(this.yScale)
@@ -333,6 +352,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('id', 'y1-axis-container')
       .attr('transform', `translate(${this.width},0)`)
+      .style('pointer-events', 'none')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
         this.d3.axisRight(this.y1Scale)
@@ -610,10 +630,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     this.renderYAxis();
     this.renderXAxis();
 
+    // metrics-rect wrapper is required for panning
     this.chartContainer.select('.metrics-rect')
-      .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
-    // TODO: move metric-rect to core. Now it is in Pod
-    this.chartContainer.selectAll('.metric-el')
       .attr('transform', `translate(${this.state.transform.x},${this.state.transform.y}), scale(${this.state.transform.k})`);
   }
 
@@ -630,6 +648,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       }
       if(scrollZoomOptions.isActive === true && this.isD3EventKeyEqualOption(event, scrollZoomOptions.keyEvent)) {
         this.state.transform = { k: event.transform.k };
+      }
+    } else {
+      const isPanActive = this.options.zoomEvents.mouse.pan.isActive;
+      if(!isPanActive) {
+        return;
       }
     }
 

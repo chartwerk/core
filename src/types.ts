@@ -22,12 +22,23 @@ export type Options = {
     onLegendClick: (idx: number) => void,
     onLegendLabelClick: (idx: number) => void,
     contextMenu: (evt: any) => void, // the same name as in d3.events
-    sharedCrosshairMove: (event: any) => void
+    sharedCrosshairMove: (event: any) => void,
+    renderEnd: () => void,
   };
   axis?: {
     x?: AxisOption,
     y?: AxisOption,
     y1?: AxisOption
+  };
+  grid?: {
+    x?: {
+      isActive?: boolean;
+      ticksCount?: number;
+    },
+    y?: {
+      isActive?: boolean;
+      ticksCount?: number;
+    },
   };
   crosshair?: {
     orientation?: CrosshairOrientation;
@@ -80,9 +91,7 @@ export type Options = {
     },
   }
   renderTicksfromTimestamps?: boolean;
-  renderGrid?: boolean;
   renderLegend?: boolean;
-  renderCrosshair?: boolean;
 };
 export type AxisOption = {
   isActive?: boolean;

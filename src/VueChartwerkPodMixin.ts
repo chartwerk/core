@@ -78,6 +78,9 @@ export default {
       if(has(this.$listeners, 'sharedCrosshairMove')) {
         this.options.eventsCallbacks.sharedCrosshairMove = this.sharedCrosshairMove.bind(this);
       }
+      if(has(this.$listeners, 'renderEnd')) {
+        this.options.eventsCallbacks.renderEnd = this.renderEnd.bind(this);
+      }
     },
     zoomIn(range) {
       this.$emit('zoomIn', range);
@@ -105,6 +108,9 @@ export default {
     },
     sharedCrosshairMove(event) {
       this.$emit('sharedCrosshairMove', event);
-    }
+    },
+    renderEnd() {
+      this.$emit('renderEnd');
+    },
   }
 };
