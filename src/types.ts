@@ -92,6 +92,7 @@ export type Options = {
   }
   renderTicksfromTimestamps?: boolean;
   renderLegend?: boolean;
+  renderClipPath?: boolean;
 };
 export type AxisOption = {
   isActive?: boolean;

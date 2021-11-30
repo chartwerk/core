@@ -117,6 +117,7 @@ const DEFAULT_OPTIONS: Options = {
   },
   renderTicksfromTimestamps: false,
   renderLegend: true,
+  renderClipPath: true,
 }
 
 abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
@@ -505,6 +506,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderClipPath(): void {
+    if(this.options.renderClipPath === false) {
+      return;
+    }
     this.clipPath = this.chartContainer.append('defs').append('SVG:clipPath')
       .attr('id', this.rectClipId)
       .append('SVG:rect')

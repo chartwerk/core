@@ -101,6 +101,7 @@ export declare type Options = {
     };
     renderTicksfromTimestamps?: boolean;
     renderLegend?: boolean;
+    renderClipPath?: boolean;
 };
 export declare type AxisOption = {
     isActive?: boolean;
